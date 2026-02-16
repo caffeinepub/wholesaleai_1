@@ -1,0 +1,79 @@
+{
+  "kind": "build_request",
+  "title": "Improve the initial startup popup / first impression screens",
+  "projectName": "WholesaleAI",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Redesign the initial profile setup popup (the required welcome dialog shown after first sign-in) to feel more polished and helpful while keeping the same functional gating behavior (cannot dismiss until a profile is created).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-9"
+        ],
+        "quotes": [
+          "Can you make the thing that pops up at the beginning to something better"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When a signed-in user has no profile, the app shows a redesigned ProfileSetupDialog and the user cannot dismiss it by clicking outside (gating remains required).",
+        "The dialog includes clearer onboarding copy in English explaining why the app needs the information and what happens next.",
+        "Name remains required; phone and email remain optional; the primary CTA is disabled until name is non-empty.",
+        "Submission shows an in-button loading state (existing pending behavior preserved) and the UI clearly indicates success by closing the dialog once the profile is saved.",
+        "If saving fails, the user sees an in-dialog error message (English) and can retry without losing typed input."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Improve the very first screen shown on app launch for unauthenticated users (the sign-in screen) with a more premium layout and clearer value proposition, without changing the Internet Identity login flow.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-9"
+        ],
+        "quotes": [
+          "Can you make the thing that pops up at the beginning to something better"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Unauthenticated users still land on the SignInScreen and can sign in using the existing Internet Identity login action.",
+        "The sign-in screen layout is visually upgraded (better spacing, typography hierarchy, and a contained/card-like composition) while remaining responsive from mobile to desktop.",
+        "All user-facing text remains in English and the existing wordmark image continues to render correctly.",
+        "The loading state while connecting (spinner + 'Connecting...') remains visible and accessible."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Apply a single coherent visual theme to the startup experience (sign-in + profile setup popup + loading states) with consistent styling (color accents, typography, and component rhythm). Avoid blue/purple as the primary accent.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-9"
+        ],
+        "quotes": [
+          "Can you make the thing that pops up at the beginning to something better"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Sign-in screen, profile setup dialog, and the two loading states in App.tsx share consistent typography and spacing.",
+        "The theme uses a distinct accent color that is not primarily blue or purple and is applied consistently to primary CTAs and focus states.",
+        "No changes are made to read-only UI component sources under frontend/src/components/ui; composition/wrapping is used instead where needed."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not edit files under frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose instead of modifying).",
+    "Do not change authentication providers/flow; continue using Internet Identity.",
+    "Do not add new backend features/state for this request; keep changes limited to UI/UX of the initial screens."
+  ],
+  "nonGoals": [
+    "Adding payment integration or membership purchase flows.",
+    "Adding new onboarding steps that change required data fields beyond the existing name/phone/email.",
+    "Changing backend schema or profile semantics."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

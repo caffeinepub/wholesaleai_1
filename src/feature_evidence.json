@@ -1,0 +1,70 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-redesign-the-initial-profile-setup-popup-the-required-welcome-dialog-shown-after-first-sign-in-to-feel-more-polished-and-helpful-while-keeping-the-same-functional-gating-behavior-cannot-dismiss-until-a-profile-is-created",
+      "featureTitle": "Redesign the initial profile setup popup (the required welcome dialog shown after first sign-in) to feel more polished and helpful while keeping the same functional gating behavior (cannot dismiss until a profile is created).",
+      "files": [
+        "frontend/src/components/ProfileSetupDialog.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-the-very-first-screen-shown-on-app-launch-for-unauthenticated-users-the-sign-in-screen-with-a-more-premium-layout-and-clearer-value-proposition-without-changing-the-internet-identity-login-flow",
+      "featureTitle": "Improve the very first screen shown on app launch for unauthenticated users (the sign-in screen) with a more premium layout and clearer value proposition, without changing the Internet Identity login flow.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/SignInScreen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-apply-a-single-coherent-visual-theme-to-the-startup-experience-sign-in-profile-setup-popup-loading-states-with-consistent-styling-color-accents-typography-and-component-rhythm-avoid-blue-purple-as-the-primary-accent",
+      "featureTitle": "Apply a single coherent visual theme to the startup experience (sign-in + profile setup popup + loading states) with consistent styling (color accents, typography, and component rhythm). Avoid blue/purple as the primary accent.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/ProfileSetupDialog.tsx",
+        "frontend/src/components/SignInScreen.tsx",
+        "frontend/src/components/StartupLoadingScreen.tsx",
+        "frontend/src/index.css"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

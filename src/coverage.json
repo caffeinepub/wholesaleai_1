@@ -1,0 +1,76 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-16T18:03:46.815Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 3,
+    "implemented": 3,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Redesign the initial profile setup popup (the required welcome dialog shown after first sign-in) to feel more polished and helpful while keeping the same functional gating behavior (cannot dismiss until a profile is created).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/ProfileSetupDialog.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/ProfileSetupDialog.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Improve the very first screen shown on app launch for unauthenticated users (the sign-in screen) with a more premium layout and clearer value proposition, without changing the Internet Identity login flow.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/SignInScreen.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/SignInScreen.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Apply a single coherent visual theme to the startup experience (sign-in + profile setup popup + loading states) with consistent styling (color accents, typography, and component rhythm). Avoid blue/purple as the primary accent.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/index.css",
+          "frontend/src/components/StartupLoadingScreen.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/SignInScreen.tsx",
+          "frontend/src/components/ProfileSetupDialog.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/index.css",
+          "frontend/src/components/StartupLoadingScreen.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/SignInScreen.tsx",
+          "frontend/src/components/ProfileSetupDialog.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "build-template/README.md",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
+    "frontend/src/components/ProfileSetupDialog.tsx",
+    "frontend/src/components/SignInScreen.tsx",
+    "frontend/src/components/StartupLoadingScreen.tsx",
+    "frontend/src/config.ts",
+    "frontend/src/index.css",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

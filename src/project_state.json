@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-redesign-the-initial-profile-setup-popup-the-required-welcome-dialog-shown-after-first-sign-in-to-feel-more-polished-and-helpful-while-keeping-the-same-functional-gating-behavior-cannot-dismiss-until-a-profile-is-created",
+      "title": "Redesign the initial profile setup popup (the required welcome dialog shown after first sign-in) to feel more polished and helpful while keeping the same functional gating behavior (cannot dismiss until a profile is created).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-the-very-first-screen-shown-on-app-launch-for-unauthenticated-users-the-sign-in-screen-with-a-more-premium-layout-and-clearer-value-proposition-without-changing-the-internet-identity-login-flow",
+      "title": "Improve the very first screen shown on app launch for unauthenticated users (the sign-in screen) with a more premium layout and clearer value proposition, without changing the Internet Identity login flow.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-single-coherent-visual-theme-to-the-startup-experience-sign-in-profile-setup-popup-loading-states-with-consistent-styling-color-accents-typography-and-component-rhythm-avoid-blue-purple-as-the-primary-accent",
+      "title": "Apply a single coherent visual theme to the startup experience (sign-in + profile setup popup + loading states) with consistent styling (color accents, typography, and component rhythm). Avoid blue/purple as the primary accent.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Improve the initial popup/first screen that appears when the app starts (make it better UX/UI).",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "WholesaleAI",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
