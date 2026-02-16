@@ -50,17 +50,29 @@ export function useGetCallerUserProfile() {
       if (!actor) throw new Error('Actor not available');
       try {
         const profile = await actor.getCallerUserProfile();
-        // Backend now auto-initializes profiles, so check if name is empty (needs setup)
-        if (!profile.name || profile.name.trim() === '') {
-          return null; // Treat empty profile as needing setup
+        // If profile exists but name is empty, treat as needing setup
+        if (profile && (!profile.name || profile.name.trim() === '')) {
+          return null;
         }
         return profile;
       } catch (error: any) {
+        const errorMsg = error?.message || String(error);
+        // If the error is about unauthorized access, try to initialize profile
+        if (errorMsg.includes('Unauthorized')) {
+          try {
+            // Call initializeProfile to bootstrap first-time user
+            const newProfile = await actor.initializeProfile();
+            // Return null to trigger profile setup dialog
+            return null;
+          } catch (initError: any) {
+            throw normalizeError(initError);
+          }
+        }
         throw normalizeError(error);
       }
     },
     enabled: actorReady,
-    retry: false, // Don't retry profile fetch - either it works or we show setup
+    retry: false,
   });
 
   return {
@@ -68,6 +80,25 @@ export function useGetCallerUserProfile() {
     isLoading: actorLoading || query.isLoading,
     isFetched: actorReady && query.isFetched,
   };
+}
+
+export function useInitializeProfile() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.initializeProfile();
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
 }
 
 export function useSaveCallerUserProfile() {
@@ -525,6 +556,7 @@ export function useUpdateContractStatus() {
   return useMutation({
     mutationFn: async (params: {
       contractId: bigint;
+      dealId: bigint;
       signingStatus: Variant_Unsigned_Signed;
       closingDate: bigint | null;
       emd: bigint | null;
@@ -541,8 +573,8 @@ export function useUpdateContractStatus() {
         throw normalizeError(error);
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['contracts', variables.dealId.toString()] });
     },
   });
 }
@@ -581,6 +613,7 @@ export function useGetMembershipCatalog() {
       }
     },
     enabled: actorReady,
+    staleTime: 60000, // Cache for 1 minute
   });
 }
 
@@ -635,13 +668,13 @@ export function useIsStripeConfigured() {
   const { actor, actorReady } = useBackendActor();
 
   return useQuery<boolean>({
-    queryKey: ['stripeConfigured'],
+    queryKey: ['isStripeConfigured'],
     queryFn: async () => {
       if (!actor) return false;
       try {
         return await actor.isStripeConfigured();
       } catch (error: any) {
-        throw normalizeError(error);
+        return false;
       }
     },
     enabled: actorReady,
@@ -662,7 +695,7 @@ export function useSetStripeConfiguration() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stripeConfigured'] });
+      queryClient.invalidateQueries({ queryKey: ['isStripeConfigured'] });
     },
   });
 }

@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { useSaveCallerUserProfile } from '../hooks/useQueries';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSaveCallerUserProfile } from '../hooks/useQueries';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { MembershipTier } from '../backend';
-import { Loader2 } from 'lucide-react';
 
 export default function ProfileSetupDialog() {
   const [name, setName] = useState('');
@@ -27,8 +28,10 @@ export default function ProfileSetupDialog() {
         email: email.trim(),
         membershipTier: MembershipTier.Basic,
       });
+      // Profile saved successfully - query invalidation will trigger re-render
     } catch (error) {
-      console.error('Failed to save profile:', error);
+      // Error is handled by mutation state
+      console.error('Profile save error:', error);
     }
   };
 
@@ -38,22 +41,31 @@ export default function ProfileSetupDialog() {
     <Dialog open={true}>
       <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="text-2xl">Welcome to Wholesale Lens</DialogTitle>
+          <DialogTitle>Welcome to Wholesale Lens</DialogTitle>
           <DialogDescription>
-            Let's get you set up. Please provide your information to continue.
+            Let's set up your profile to get started.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {saveProfile.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {saveProfile.error?.message || 'Failed to save profile. Please try again.'}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="name">
-              Full Name <span className="text-destructive">*</span>
+              Name <span className="text-destructive">*</span>
             </Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
+              placeholder="Enter your full name"
               required
               disabled={isSubmitting}
               autoFocus
@@ -61,7 +73,7 @@ export default function ProfileSetupDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="phone">Phone</Label>
             <Input
               id="phone"
               type="tel"
@@ -73,27 +85,21 @@ export default function ProfileSetupDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="john@example.com"
+              placeholder="you@example.com"
               disabled={isSubmitting}
             />
           </div>
 
-          {saveProfile.isError && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-              {saveProfile.error?.message || 'Failed to save profile. Please try again.'}
-            </div>
-          )}
-
           <Button
             type="submit"
             className="w-full"
-            disabled={isSubmitting || !name.trim()}
+            disabled={!name.trim() || isSubmitting}
           >
             {isSubmitting ? (
               <>

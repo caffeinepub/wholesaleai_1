@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getUrlParameter } from '../utils/urlParams';
 
 export default function PaymentSuccessPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -12,9 +13,8 @@ export default function PaymentSuccessPage() {
   const { data: userProfile, refetch: refetchProfile } = useGetCallerUserProfile();
 
   useEffect(() => {
-    // Extract session_id from URL
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('session_id');
+    // Extract session_id from URL (supports both query string and hash routing)
+    const id = getUrlParameter('session_id');
     
     if (id) {
       setSessionId(id);

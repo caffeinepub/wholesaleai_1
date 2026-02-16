@@ -242,30 +242,12 @@ actor {
     userBuyers;
   };
 
-  // Helper: Initialize default profile for new users
-  func initializeDefaultProfile(caller : Principal) : UserProfile {
-    let defaultProfile : UserProfile = {
-      name = "";
-      phone = "";
-      email = "";
-      membershipTier = #Basic;
-    };
-    userProfiles.add(caller, defaultProfile);
-    defaultProfile;
-  };
-
   // User Profile Management
-  public query ({ caller }) func getCallerUserProfile() : async UserProfile {
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
     };
-    switch (userProfiles.get(caller)) {
-      case (?profile) { profile };
-      case (null) {
-        // Initialize default profile for brand-new users
-        initializeDefaultProfile(caller);
-      };
-    };
+    userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
@@ -283,6 +265,27 @@ actor {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.add(caller, profile);
+  };
+
+  // Initialize default profile for first-time users
+  public shared ({ caller }) func initializeProfile() : async UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can initialize profiles");
+    };
+    
+    switch (userProfiles.get(caller)) {
+      case (?existingProfile) { existingProfile };
+      case (null) {
+        let defaultProfile : UserProfile = {
+          name = "";
+          phone = "";
+          email = "";
+          membershipTier = #Basic;
+        };
+        userProfiles.add(caller, defaultProfile);
+        defaultProfile;
+      };
+    };
   };
 
   // AI Deal Analyzer
@@ -959,6 +962,9 @@ actor {
   // Membership Payment & Access Control
 
   public shared ({ caller }) func createCheckoutSession(items : [Stripe.ShoppingItem], successUrl : Text, cancelUrl : Text) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can create checkout sessions");
+    };
     await Stripe.createCheckoutSession(getStripeConfiguration(), caller, items, successUrl, cancelUrl, transform);
   };
 

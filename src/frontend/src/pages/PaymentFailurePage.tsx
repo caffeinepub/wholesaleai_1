@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getUrlParameter } from '../utils/urlParams';
 
 export default function PaymentFailurePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Extract session_id from URL if present
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('session_id');
+    // Extract session_id from URL (supports both query string and hash routing)
+    const id = getUrlParameter('session_id');
     
     if (id) {
       setSessionId(id);

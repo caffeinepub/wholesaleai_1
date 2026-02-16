@@ -33,6 +33,26 @@ export function getUrlParameter(paramName: string): string | null {
 }
 
 /**
+ * Gets the current route path from either pathname or hash
+ * Supports both browser routing and hash-based routing (IC hosting)
+ * 
+ * @returns The current route path (e.g., '/payment-success', '/dashboard')
+ */
+export function getCurrentRoutePath(): string {
+    // Check if we're using hash-based routing
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+        // Remove leading # and extract path before query string
+        const hashContent = hash.substring(1);
+        const queryIndex = hashContent.indexOf('?');
+        return queryIndex !== -1 ? hashContent.substring(0, queryIndex) : hashContent;
+    }
+    
+    // Fall back to pathname for browser routing
+    return window.location.pathname;
+}
+
+/**
  * Stores a parameter in sessionStorage for persistence across navigation
  * Useful for maintaining state like admin tokens throughout the session
  *

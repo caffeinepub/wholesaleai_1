@@ -58,6 +58,7 @@ export default function AppShell({ userProfile }: AppShellProps) {
 
   const handleLogout = async () => {
     await clear();
+    // Clear all cached data including profile
     queryClient.clear();
   };
 

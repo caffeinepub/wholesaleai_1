@@ -206,7 +206,7 @@ export interface backendInterface {
     deleteDeal(dealId: bigint): Promise<void>;
     getAnalytics(): Promise<AnalyticsData>;
     getBuyer(buyerId: bigint): Promise<Buyer | null>;
-    getCallerUserProfile(): Promise<UserProfile>;
+    getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getContract(contractId: bigint): Promise<ContractDocument | null>;
     getDeal(dealId: bigint): Promise<Deal | null>;
@@ -214,6 +214,7 @@ export interface backendInterface {
     getPaymentSession(sessionId: string): Promise<PaymentSession | null>;
     getStripeSessionStatus(sessionId: string): Promise<StripeSessionStatus>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    initializeProfile(): Promise<UserProfile>;
     isCallerAdmin(): Promise<boolean>;
     isStripeConfigured(): Promise<boolean>;
     listBuyers(): Promise<Array<Buyer>>;

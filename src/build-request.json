@@ -1,71 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Fix sidebar navigation getting stuck and resolve usability-breaking UI errors",
+  "title": "Fix app startup failures and unblock first-time sign-in",
   "projectName": "Wholesale Lens",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-5",
-      "text": "Fix the authenticated app navigation so that clicking a sidebar item reliably switches the main content view (the selected page must render in the main content area and not appear “stuck” in the sidebar).",
+      "id": "REQ-1",
+      "text": "Fix the startup flow so the app reliably reaches a usable screen (Sign In, Profile Setup, or Dashboard) after launch, with no blank screen or infinite loading.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages-4"
         ],
         "quotes": [
-          "It gets stuck on the side bar when you click it the tab should be popped up"
+          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
         ]
       },
       "acceptanceCriteria": [
-        "From the authenticated shell, clicking each navigation item (Dashboard, Deal Analyzer, Deals Pipeline, Buyers List, Contracts, Analytics, Membership, Admin Panel) updates the active state in the sidebar and renders the correct page in the main content area.",
-        "The main content area remains visible and usable after navigation (not overlapped/hidden by the sidebar).",
-        "Navigation continues to work after repeated switching between multiple pages without requiring a refresh."
+        "Launching the app shows a visible UI within 30 seconds (loading, sign-in, or an actionable error screen).",
+        "No uncaught exceptions occur during initial render (verify via browser console).",
+        "If the backend/identity is unavailable, the user sees StartupErrorScreen with a working Retry button."
       ]
     },
     {
-      "id": "REQ-6",
-      "text": "Make the sidebar layout responsive and usable on smaller screens by ensuring the navigation can be opened/closed and that selecting a nav item reveals the content panel (e.g., a collapsible sidebar/drawer behavior on mobile widths).",
-      "target": "frontend",
+      "id": "REQ-2",
+      "text": "Ensure authenticated users can successfully load their profile and use the app without requiring an admin token, including first-time users with no existing profile data.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages-4"
         ],
         "quotes": [
-          "It gets stuck on the side bar when you click it the tab should be popped up"
+          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
         ]
       },
       "acceptanceCriteria": [
-        "On small screens, the navigation can be toggled open and closed, and the main content remains accessible.",
-        "When a user selects a navigation item on small screens, the navigation closes (or otherwise gets out of the way) and the chosen page content is visible.",
-        "The desktop layout keeps a persistent sidebar and does not regress."
+        "A newly authenticated principal can call `getCallerUserProfile` without receiving an unauthorized error.",
+        "If the user has no completed profile (e.g., name is empty), the app shows ProfileSetupDialog and can save successfully.",
+        "After saving a profile, the app transitions into the normal AppShell experience without requiring a page refresh."
       ]
     },
     {
-      "id": "REQ-7",
-      "text": "Resolve any runtime/UI errors that prevent normal use of the authenticated app shell (including errors triggered by page switching) and ensure there are no blocking console errors during basic navigation.",
+      "id": "REQ-3",
+      "text": "Improve startup error reporting so that when startup fails (actor creation, authorization/profile fetch, or routing issues), the error screen clearly displays the underlying failure reason in English and provides a reliable recovery path.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages-4"
         ],
         "quotes": [
-          "fix all your errors make it usable"
+          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
         ]
       },
       "acceptanceCriteria": [
-        "Basic authenticated flow works end-to-end: sign in, land in the app shell, switch pages from the navigation, and interact with scrollable content without crashes.",
-        "No navigation action results in a blank main pane due to an unhandled exception.",
-        "Any existing navigation-related console errors (errors thrown during render, click handlers, or lazy loading of pages) are eliminated or handled with a user-facing fallback state."
+        "StartupErrorScreen displays an actionable, user-readable message derived from the underlying error (not just a generic fallback), while remaining safe (no secrets).",
+        "The Retry button triggers the correct retry action (backend connection vs. profile fetch) and can recover without a full reload when the transient issue is resolved.",
+        "The app does not get stuck in a retry loop; repeated failures keep the user on a stable error screen."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Make payment result page detection and startup routing resilient for Internet Computer hosting (including hash-based URLs) so users can open payment success/failure pages without the app misrouting or failing at startup.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages-4"
+        ],
+        "quotes": [
+          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Visiting a hash-based URL for payment results (e.g., `#/payment-success` or equivalent used by the app) correctly renders PaymentSuccessPage after authentication and actor readiness.",
+        "Visiting non-payment URLs does not incorrectly trigger the payment flow.",
+        "Navigation/back-forward changes update the rendered route without breaking startup."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files in frontend immutablePaths (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or anything under frontend/src/components/ui).",
-    "Keep all user-facing text in English."
+    "Do not edit files under `frontend/src/components/ui` (compose existing shadcn components instead).",
+    "Do not edit immutable hook entry files listed in SYSTEM_CONTEXT (e.g., `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`).",
+    "Backend must remain a single Motoko actor in `backend/main.mo`; only add `backend/migration.mo` if a state upgrade is required."
   ],
   "nonGoals": [
-    "Adding new product features beyond fixing navigation/usability.",
-    "Changing backend data models or adding new backend endpoints unless strictly necessary to fix the sidebar navigation issue."
+    "Adding new product features beyond making the app start and be usable.",
+    "Integrating third-party auth providers beyond Internet Identity.",
+    "Adding external databases or non-Motoko backend services."
   ],
   "imageRequirements": {
     "required": [],

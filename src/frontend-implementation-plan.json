@@ -1,83 +1,109 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Wholesale Lens - Fix sidebar navigation, responsive layout, and navigation-breaking UI errors",
+  "title": "Wholesale Lens — Stabilize startup, profile bootstrap, and hash-based payment routing",
   "requirements": [
     {
-      "id": "REQ-5",
-      "summary": "Ensure sidebar navigation always switches the main content view (no 'stuck in sidebar' rendering) and keeps main panel visible.",
+      "id": "REQ-1",
+      "summary": "Make startup state machine resilient so the app always renders a usable screen (sign-in, profile setup, dashboard, or stable error) without blank/infinite loading.",
       "acceptanceCriteria": [
-        "From the authenticated shell, clicking each navigation item (Dashboard, Deal Analyzer, Deals Pipeline, Buyers List, Contracts, Analytics, Membership, Admin Panel) updates the active state in the sidebar and renders the correct page in the main content area.",
-        "The main content area remains visible and usable after navigation (not overlapped/hidden by the sidebar).",
-        "Navigation continues to work after repeated switching between multiple pages without requiring a refresh."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/AppShell.tsx",
-          "operation": "modify",
-          "description": "Fix layout and view-switching reliability by ensuring the selected page renders only in the main content area, adding necessary flex/min-width/overflow guards (e.g., main content min-w-0) to prevent the sidebar from overlapping or visually trapping content, and keeping the active nav state in sync with the rendered PageComponent."
-        },
-        {
-          "path": "frontend/src/components/AppShellErrorBoundary.tsx",
-          "operation": "create",
-          "description": "Add a small React error boundary component that can wrap the main content renderer so that if any page throws during render, a user-facing fallback is shown instead of a blank or broken main pane."
-        },
-        {
-          "path": "frontend/src/components/AppShell.tsx",
-          "operation": "modify",
-          "description": "Wrap the lazy-loaded PageComponent render with the new AppShellErrorBoundary to prevent unhandled exceptions from causing a blank main content area during navigation."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Make the sidebar responsive with a mobile drawer that can open/close and auto-closes on navigation without breaking the desktop persistent sidebar layout.",
-      "acceptanceCriteria": [
-        "On small screens, the navigation can be toggled open and closed, and the main content remains accessible.",
-        "When a user selects a navigation item on small screens, the navigation closes (or otherwise gets out of the way) and the chosen page content is visible.",
-        "The desktop layout keeps a persistent sidebar and does not regress."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/AppShell.tsx",
-          "operation": "modify",
-          "description": "Implement responsive sidebar behavior: keep the existing persistent sidebar for desktop widths, and add a mobile drawer/collapsible mode with a toggle button in a small-screen header; selecting a nav item should also close the drawer. Use shadcn-ui primitives already available in the project (e.g., Sheet/Drawer patterns if present) to implement the drawer behavior. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useMediaQuery.ts",
-          "operation": "create",
-          "description": "Add a lightweight media-query hook to reliably detect small screens for toggling drawer behavior and for auto-close rules after navigation."
-        },
-        {
-          "path": "frontend/src/components/AppShell.tsx",
-          "operation": "modify",
-          "description": "Wire the new useMediaQuery hook into the AppShell so the sidebar toggle UI and auto-close behavior only apply on small screens while preserving the desktop persistent sidebar layout."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Eliminate runtime/UI errors during authenticated shell usage and page switching, including fixing broken routes and adding safe fallbacks for page-load failures.",
-      "acceptanceCriteria": [
-        "Basic authenticated flow works end-to-end: sign in, land in the app shell, switch pages from the navigation, and interact with scrollable content without crashes.",
-        "No navigation action results in a blank main pane due to an unhandled exception.",
-        "Any existing navigation-related console errors (errors thrown during render, click handlers, or lazy loading of pages) are eliminated or handled with a user-facing fallback state."
+        "Launching the app shows a visible UI within 30 seconds (loading, sign-in, or an actionable error screen).",
+        "No uncaught exceptions occur during initial render (verify via browser console).",
+        "If the backend/identity is unavailable, the user sees StartupErrorScreen with a working Retry button."
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Fix the payment failure route check to match the actual failure page path (use '/payment-failure' rather than '/payment-cancel') so authenticated navigation to payment result pages does not silently fail or render the wrong screen."
+          "description": "Refactor startup flow into an explicit, non-blocking state machine that cannot dead-end: (1) identity init -> (2) actor init -> (3) route gate (payment vs app) -> (4) profile bootstrap -> (5) AppShell/ProfileSetupDialog. Ensure the 30s watchdog always transitions to a stable StartupErrorScreen (never blank), and that retries reset the watchdog and only re-run the failed stage."
         },
         {
-          "path": "frontend/src/components/AppShellErrorBoundary.tsx",
-          "operation": "create",
-          "description": "Ensure the error boundary fallback UI provides an actionable recovery path (e.g., a button to return to Dashboard) and does not throw additional errors; keep all user-facing text in English."
+          "path": "frontend/src/hooks/useBackendActor.ts",
+          "operation": "modify",
+          "description": "Expose clearer readiness and failure signals for startup (e.g., distinguish identity still initializing vs actor creation failure) and ensure refetch provides a reliable manual recovery path when startup retry is pressed."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Unblock first-time authenticated users by gracefully bootstrapping profile access without requiring an admin token, and transition into the normal AppShell without refresh after saving profile.",
+      "acceptanceCriteria": [
+        "A newly authenticated principal can call `getCallerUserProfile` without receiving an unauthorized error.",
+        "If the user has no completed profile (e.g., name is empty), the app shows ProfileSetupDialog and can save successfully.",
+        "After saving a profile, the app transitions into the normal AppShell experience without requiring a page refresh."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update the profile startup query logic to support first-time users: use the authorization component’s expected flow (getCallerUserProfile + saveCallerUserProfile) and add a one-time bootstrap fallback using the existing backend capability initializeProfile() when profile fetch fails in a way consistent with first-time setup. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/ProfileSetupDialog.tsx",
+          "operation": "modify",
+          "description": "Harden first-time profile setup UX: ensure save errors are clearly surfaced, and ensure successful save reliably unblocks the app by relying on the currentUserProfile query invalidation/refetch (no refresh). Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/AppShell.tsx",
           "operation": "modify",
-          "description": "Harden page switching by adding a defensive fallback when the selected PageComponent is missing/undefined and by ensuring Suspense fallback and error boundary cover lazy-load failures, preventing blank main pane and blocking console errors during repeated navigation."
+          "description": "Ensure logout continues to clear cached app/profile data (react-query cache) so subsequent logins re-run the first-time profile flow correctly, aligning with the authorization component guidance. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Improve startup error reporting with user-readable root causes and correct retry actions for actor creation vs profile fetch vs routing issues, without retry loops.",
+      "acceptanceCriteria": [
+        "StartupErrorScreen displays an actionable, user-readable message derived from the underlying error (not just a generic fallback), while remaining safe (no secrets).",
+        "The Retry button triggers the correct retry action (backend connection vs. profile fetch) and can recover without a full reload when the transient issue is resolved.",
+        "The app does not get stuck in a retry loop; repeated failures keep the user on a stable error screen."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/StartupErrorScreen.tsx",
+          "operation": "modify",
+          "description": "Extend StartupErrorScreen to accept structured startup failure context (e.g., failure stage, safe technical detail string) and render an English, actionable message derived from the underlying error while omitting sensitive values. Ensure the Retry button label and behavior can be stage-specific. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust error normalization for startup-critical queries so StartupErrorScreen can display a more specific, safe message (e.g., differentiate network/backend unavailable vs authorization/profile setup required), without leaking secrets."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire startup failures into StartupErrorScreen with correct retry actions per failure stage (actor refetch vs profile refetch vs route recomputation), and ensure retries are user-initiated only (no automatic retry loops)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Make payment result detection and startup routing work reliably on Internet Computer hosting, including hash-based URLs and back/forward navigation.",
+      "acceptanceCriteria": [
+        "Visiting a hash-based URL for payment results (e.g., `#/payment-success` or equivalent used by the app) correctly renders PaymentSuccessPage after authentication and actor readiness.",
+        "Visiting non-payment URLs does not incorrectly trigger the payment flow.",
+        "Navigation/back-forward changes update the rendered route without breaking startup."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Add small, focused helpers to derive the current in-app route path in a routing-mode-agnostic way (pathname vs hash route) and to read parameters from both query-string and hash-query consistently, to support IC hash-based URLs."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Replace pathname-only payment route detection with route parsing that supports both browser paths and hash routes (e.g., '#/payment-success' and '#/payment-failure'). Subscribe to both 'popstate' and 'hashchange' so back/forward updates routing reliably without disrupting startup."
+        },
+        {
+          "path": "frontend/src/pages/PaymentSuccessPage.tsx",
+          "operation": "modify",
+          "description": "Read Stripe session_id in a way compatible with IC hash routing by using the shared URL parameter utilities (instead of window.location.search only), and ensure the page remains stable if session_id is missing."
+        },
+        {
+          "path": "frontend/src/pages/PaymentFailurePage.tsx",
+          "operation": "modify",
+          "description": "Read Stripe session_id in a way compatible with IC hash routing by using the shared URL parameter utilities (instead of window.location.search only), and ensure navigation actions do not break hash-based hosting."
         }
       ]
     }
