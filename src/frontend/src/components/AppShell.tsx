@@ -1,18 +1,22 @@
-import { useState } from 'react';
-import { Home, Sparkles, Layers, Users, FileText, BarChart3, CreditCard, Menu, X, LogOut } from 'lucide-react';
+import { useState, lazy, Suspense } from 'react';
+import { Home, Sparkles, Layers, Users, FileText, BarChart3, CreditCard, Menu, X, LogOut, Settings } from 'lucide-react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import DashboardPage from '../pages/DashboardPage';
-import DealAnalyzerPage from '../pages/DealAnalyzerPage';
-import DealsPipelinePage from '../pages/DealsPipelinePage';
-import BuyersListPage from '../pages/BuyersListPage';
-import ContractsPage from '../pages/ContractsPage';
-import AnalyticsPage from '../pages/AnalyticsPage';
-import MembershipPage from '../pages/MembershipPage';
+import { useIsCallerAdmin } from '../hooks/useQueries';
+import type { UserProfile } from '../backend';
 
-type Page = 'dashboard' | 'analyzer' | 'pipeline' | 'buyers' | 'contracts' | 'analytics' | 'membership';
+// Lazy load pages to reduce initial bundle size
+const DashboardPage = lazy(() => import('../pages/DashboardPage'));
+const DealAnalyzerPage = lazy(() => import('../pages/DealAnalyzerPage'));
+const DealsPipelinePage = lazy(() => import('../pages/DealsPipelinePage'));
+const BuyersListPage = lazy(() => import('../pages/BuyersListPage'));
+const ContractsPage = lazy(() => import('../pages/ContractsPage'));
+const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
+const MembershipPage = lazy(() => import('../pages/MembershipPage'));
+const AdminPanelPage = lazy(() => import('../pages/AdminPanelPage'));
+
+type Page = 'dashboard' | 'analyzer' | 'pipeline' | 'buyers' | 'contracts' | 'analytics' | 'membership' | 'admin';
 
 const navItems = [
   { id: 'dashboard' as Page, label: 'Dashboard', icon: Home },
@@ -24,12 +28,16 @@ const navItems = [
   { id: 'membership' as Page, label: 'Membership', icon: CreditCard },
 ];
 
-export default function AppShell() {
+interface AppShellProps {
+  userProfile: UserProfile | null;
+}
+
+export default function AppShell({ userProfile }: AppShellProps) {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { clear } = useInternetIdentity();
   const queryClient = useQueryClient();
-  const { data: userProfile } = useGetCallerUserProfile();
+  const { data: isAdmin } = useIsCallerAdmin();
 
   const handleLogout = async () => {
     await clear();
@@ -37,23 +45,67 @@ export default function AppShell() {
   };
 
   const renderPage = () => {
+    const PageLoadingFallback = (
+      <div className="flex items-center justify-center h-64">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+      </div>
+    );
+
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <DashboardPage />
+          </Suspense>
+        );
       case 'analyzer':
-        return <DealAnalyzerPage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <DealAnalyzerPage />
+          </Suspense>
+        );
       case 'pipeline':
-        return <DealsPipelinePage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <DealsPipelinePage />
+          </Suspense>
+        );
       case 'buyers':
-        return <BuyersListPage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <BuyersListPage />
+          </Suspense>
+        );
       case 'contracts':
-        return <ContractsPage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <ContractsPage />
+          </Suspense>
+        );
       case 'analytics':
-        return <AnalyticsPage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <AnalyticsPage />
+          </Suspense>
+        );
       case 'membership':
-        return <MembershipPage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <MembershipPage />
+          </Suspense>
+        );
+      case 'admin':
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <AdminPanelPage />
+          </Suspense>
+        );
       default:
-        return <DashboardPage />;
+        return (
+          <Suspense fallback={PageLoadingFallback}>
+            <DashboardPage />
+          </Suspense>
+        );
     }
   };
 
@@ -69,8 +121,8 @@ export default function AppShell() {
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-6 border-b border-border">
             <img
-              src="/assets/generated/wholesaleai-mark.dim_512x512.png"
-              alt="WholesaleAI"
+              src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
+              alt="Wholesale Lens"
               className="h-8 w-8"
             />
             <button
@@ -104,6 +156,22 @@ export default function AppShell() {
                 </button>
               );
             })}
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setCurrentPage('admin');
+                  setSidebarOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  currentPage === 'admin'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
+              >
+                <Settings className="h-5 w-5" />
+                Admin Panel
+              </button>
+            )}
           </nav>
 
           {/* User info & logout */}
@@ -121,52 +189,58 @@ export default function AppShell() {
               className="w-full justify-start"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+              Logout
             </Button>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
+        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-muted-foreground hover:text-foreground"
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <img
-              src="/assets/generated/wholesaleai-wordmark.dim_1200x300.png"
-              alt="WholesaleAI"
-              className="h-6 w-auto hidden lg:block"
+              src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
+              alt="Wholesale Lens"
+              className="h-6 hidden lg:block"
             />
           </div>
-          <div className="text-sm text-muted-foreground">
-            {userProfile && <span>{userProfile.name}</span>}
+          <div className="flex items-center gap-2">
+            {userProfile && (
+              <div className="text-sm text-right hidden sm:block">
+                <p className="font-medium">{userProfile.name}</p>
+                <p className="text-xs text-muted-foreground">{userProfile.membershipTier}</p>
+              </div>
+            )}
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          {renderPage()}
+        </main>
 
         {/* Footer */}
-        <footer className="border-t border-border bg-card px-6 py-4">
-          <div className="flex items-center justify-center text-sm text-muted-foreground">
-            <span>Built with ❤️ using </span>
+        <footer className="border-t border-border bg-card px-4 py-3">
+          <div className="flex items-center justify-center text-xs text-muted-foreground">
+            <span>© {new Date().getFullYear()} Built with ❤️ using </span>
             <a
               href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
-                window.location.hostname || 'wholesaleai'
+                typeof window !== 'undefined' ? window.location.hostname : 'wholesale-lens'
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-1 text-primary hover:underline"
+              className="ml-1 hover:text-foreground transition-colors"
             >
               caffeine.ai
             </a>
-            <span className="ml-4">© {new Date().getFullYear()}</span>
           </div>
         </footer>
       </div>
@@ -174,11 +248,10 @@ export default function AppShell() {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
     </div>
   );
 }
-

@@ -1,32 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Project to add a membership system with an admin panel for managing paid/free memberships and sales.",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-redesign-the-initial-profile-setup-popup-the-required-welcome-dialog-shown-after-first-sign-in-to-feel-more-polished-and-helpful-while-keeping-the-same-functional-gating-behavior-cannot-dismiss-until-a-profile-is-created",
-      "title": "Redesign the initial profile setup popup (the required welcome dialog shown after first sign-in) to feel more polished and helpful while keeping the same functional gating behavior (cannot dismiss until a profile is created).",
+      "id": "feature-create-a-new-admin-panel-page-in-the-frontend-that-is-visible-accessible-only-to-admins-and-provides-ui-to-a-manage-membership-catalog-pricing-sale-settings-and-b-grant-free-memberships-to-a-user-by-entering-their-principal-and-selecting-a-tier",
+      "title": "Create a new Admin Panel page in the frontend that is visible/accessible only to admins and provides UI to (a) manage membership catalog pricing/sale settings and (b) grant free memberships to a user by entering their Principal and selecting a tier.",
       "reqIds": [
-        "REQ-1"
+        "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-the-very-first-screen-shown-on-app-launch-for-unauthenticated-users-the-sign-in-screen-with-a-more-premium-layout-and-clearer-value-proposition-without-changing-the-internet-identity-login-flow",
-      "title": "Improve the very first screen shown on app launch for unauthenticated users (the sign-in screen) with a more premium layout and clearer value proposition, without changing the Internet Identity login flow.",
+      "id": "feature-update-the-membership-plans-page-to-load-plan-prices-and-sale-state-from-the-backend-membership-catalog-instead-of-using-hard-coded-prices-and-display-sale-pricing-clearly-when-a-tier-is-on-sale",
+      "title": "Update the Membership Plans page to load plan prices (and sale state) from the backend membership catalog instead of using hard-coded prices, and display sale pricing clearly when a tier is on sale.",
       "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-apply-a-single-coherent-visual-theme-to-the-startup-experience-sign-in-profile-setup-popup-loading-states-with-consistent-styling-color-accents-typography-and-component-rhythm-avoid-blue-purple-as-the-primary-accent",
-      "title": "Apply a single coherent visual theme to the startup experience (sign-in + profile setup popup + loading states) with consistent styling (color accents, typography, and component rhythm). Avoid blue/purple as the primary accent.",
-      "reqIds": [
-        "REQ-3"
+        "REQ-5"
       ],
       "version": 1
     }
@@ -34,12 +26,42 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Improve the initial popup/first screen that appears when the app starts (make it better UX/UI).",
+      "summary": "Set up memberships (paid/free)",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Admin panel to manage memberships, run sales, and grant free memberships",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add backend support for an admin-managed membership catalog that defines the public pricing and sale status for each membership tier (Basic/Pro/Enterprise), and expose a query endpoint for the frontend to read the current catalog.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Add backend admin endpoints to update membership catalog pricing and put memberships on sale (enable/disable sale and set sale price) with access restricted to canister admins.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add backend admin functionality to grant (and revoke/downgrade) memberships for users without payment by setting a user's membership tier as an admin operation.",
+      "reqIds": [
+        "REQ-3"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "WholesaleAI",
+  "projectName": "Wholesale Lens",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

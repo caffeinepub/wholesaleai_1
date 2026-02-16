@@ -14,7 +14,9 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   include MixinStorage();
 
@@ -27,6 +29,20 @@ actor {
     #Basic;
     #Pro;
     #Enterprise;
+  };
+
+  public type MembershipPricing = {
+    monthlyPriceCents : Nat;
+    annualPriceCents : Nat;
+    isOnSale : Bool;
+    salePriceCents : ?Nat;
+  };
+
+  public type MembershipCatalog = {
+    basic : MembershipPricing;
+    pro : MembershipPricing;
+    enterprise : MembershipPricing;
+    lastUpdated : Int;
   };
 
   // User Profile
@@ -137,6 +153,29 @@ actor {
   let buyers = Map.empty<Nat, Buyer>();
   let contracts = Map.empty<Nat, ContractDocument>();
 
+  // Membership catalog state
+  var membershipCatalog : MembershipCatalog = {
+    basic = {
+      monthlyPriceCents = 2999;
+      annualPriceCents = 29999;
+      isOnSale = false;
+      salePriceCents = null;
+    };
+    pro = {
+      monthlyPriceCents = 8999;
+      annualPriceCents = 89999;
+      isOnSale = false;
+      salePriceCents = null;
+    };
+    enterprise = {
+      monthlyPriceCents = 29999;
+      annualPriceCents = 299999;
+      isOnSale = false;
+      salePriceCents = null;
+    };
+    lastUpdated = Time.now();
+  };
+
   // Helper: Check membership tier
   func checkMembershipTier(caller : Principal, requiredTier : MembershipTier) : Bool {
     switch (userProfiles.get(caller)) {
@@ -184,9 +223,6 @@ actor {
 
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
-    };
     userProfiles.get(caller);
   };
 
@@ -198,9 +234,6 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
     userProfiles.add(caller, profile);
   };
 
@@ -789,5 +822,48 @@ actor {
     deals.add(dealId, deal);
     nextDealId += 1;
     dealId;
+  };
+
+  // Public query for frontend to get current membership catalog
+  public query ({ caller }) func getMembershipCatalog() : async MembershipCatalog {
+    membershipCatalog;
+  };
+
+  // Admin operation to update membership pricing
+  public shared ({ caller }) func updateMembershipPricing(
+    basic : MembershipPricing,
+    pro : MembershipPricing,
+    enterprise : MembershipPricing,
+  ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update pricing");
+    };
+
+    membershipCatalog := {
+      basic;
+      pro;
+      enterprise;
+      lastUpdated = Time.now();
+    };
+  };
+
+  // Admin operation for user to admin upgrade/downgrade memberships without payment
+  public shared ({ caller }) func updateMembershipTier(
+    userId : Principal,
+    tier : MembershipTier,
+  ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update membership tiers");
+    };
+
+    switch (userProfiles.get(userId)) {
+      case (null) { Runtime.trap("User not found") };
+      case (?profile) {
+        let updatedProfile : UserProfile = {
+          profile with membershipTier = tier;
+        };
+        userProfiles.add(userId, updatedProfile);
+      };
+    };
   };
 };

@@ -1,57 +1,119 @@
-import { useGetCallerUserProfile, useSaveCallerUserProfile } from '../hooks/useQueries';
-import { MembershipTier } from '../backend';
+import { useGetCallerUserProfile, useSaveCallerUserProfile, useGetMembershipCatalog } from '../hooks/useQueries';
+import { MembershipTier, type MembershipPricing } from '../backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCents } from '../lib/money';
 
-const plans = [
-  {
-    tier: MembershipTier.Basic,
-    name: 'Basic',
-    price: '$15',
-    period: 'month',
-    features: [
-      'Add Deals',
-      'Use AI Analyzer',
-      'Profit Calculations',
-      'Basic Dashboard',
-      'Limited to 15 active deals',
-    ],
+// Fallback values matching backend defaults
+const FALLBACK_PRICING = {
+  basic: {
+    monthlyPriceCents: 2999n,
+    annualPriceCents: 29999n,
+    isOnSale: false,
+    salePriceCents: undefined,
   },
-  {
-    tier: MembershipTier.Pro,
-    name: 'Pro',
-    price: '$20',
-    period: 'month',
-    features: [
-      'Everything in Basic',
-      'Unlimited Deals',
-      'Buyers List',
-      'Deal Pipeline Tracking',
-      'Seller Notes',
-      'Contract Deadlines',
-    ],
+  pro: {
+    monthlyPriceCents: 8999n,
+    annualPriceCents: 89999n,
+    isOnSale: false,
+    salePriceCents: undefined,
   },
-  {
-    tier: MembershipTier.Enterprise,
-    name: 'Enterprise',
-    price: '$90',
-    period: 'year',
-    features: [
-      'Everything in Pro',
-      'Advanced Analytics',
-      'Contract Management',
-      'File Uploads',
-      'Priority Support',
-      'Early Access Features',
-    ],
+  enterprise: {
+    monthlyPriceCents: 29999n,
+    annualPriceCents: 299999n,
+    isOnSale: false,
+    salePriceCents: undefined,
   },
-];
+};
+
+const PLAN_FEATURES = {
+  [MembershipTier.Basic]: [
+    'Add Deals',
+    'Use AI Analyzer',
+    'Profit Calculations',
+    'Basic Dashboard',
+    'Limited to 15 active deals',
+  ],
+  [MembershipTier.Pro]: [
+    'Everything in Basic',
+    'Unlimited Deals',
+    'Buyers List',
+    'Deal Pipeline Tracking',
+    'Seller Notes',
+    'Contract Deadlines',
+  ],
+  [MembershipTier.Enterprise]: [
+    'Everything in Pro',
+    'Advanced Analytics',
+    'Contract Management',
+    'File Uploads',
+    'Priority Support',
+    'Early Access Features',
+  ],
+};
+
+function getPriceDisplay(pricing: MembershipPricing, period: 'monthly' | 'annual'): {
+  price: string;
+  salePrice: string | null;
+  period: string;
+} {
+  const isMonthly = period === 'monthly';
+  const regularPrice = isMonthly ? pricing.monthlyPriceCents : pricing.annualPriceCents;
+  const periodLabel = isMonthly ? 'month' : 'year';
+
+  if (pricing.isOnSale && pricing.salePriceCents) {
+    return {
+      price: formatCents(regularPrice),
+      salePrice: formatCents(pricing.salePriceCents),
+      period: periodLabel,
+    };
+  }
+
+  return {
+    price: formatCents(regularPrice),
+    salePrice: null,
+    period: periodLabel,
+  };
+}
 
 export default function MembershipPage() {
   const { data: userProfile } = useGetCallerUserProfile();
+  const { data: catalog, isError: catalogError } = useGetMembershipCatalog();
   const saveProfile = useSaveCallerUserProfile();
+
+  // Use catalog data or fallback
+  const pricing = catalog || FALLBACK_PRICING;
+
+  // Show non-blocking error if catalog failed to load
+  if (catalogError) {
+    toast.error('Failed to load current pricing. Showing default prices.', { id: 'catalog-error' });
+  }
+
+  const plans = [
+    {
+      tier: MembershipTier.Basic,
+      name: 'Basic',
+      pricing: pricing.basic,
+      period: 'monthly' as const,
+      features: PLAN_FEATURES[MembershipTier.Basic],
+    },
+    {
+      tier: MembershipTier.Pro,
+      name: 'Pro',
+      pricing: pricing.pro,
+      period: 'monthly' as const,
+      features: PLAN_FEATURES[MembershipTier.Pro],
+    },
+    {
+      tier: MembershipTier.Enterprise,
+      name: 'Enterprise',
+      pricing: pricing.enterprise,
+      period: 'annual' as const,
+      features: PLAN_FEATURES[MembershipTier.Enterprise],
+    },
+  ];
 
   const handleChangePlan = (tier: MembershipTier) => {
     if (!userProfile) return;
@@ -85,6 +147,8 @@ export default function MembershipPage() {
       <div className="grid gap-6 md:grid-cols-3">
         {plans.map((plan) => {
           const isCurrent = userProfile?.membershipTier === plan.tier;
+          const priceDisplay = getPriceDisplay(plan.pricing, plan.period);
+
           return (
             <Card
               key={plan.tier}
@@ -100,8 +164,25 @@ export default function MembershipPage() {
                   )}
                 </CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground">/{plan.period}</span>
+                  {priceDisplay.salePrice ? (
+                    <div className="space-y-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-4xl font-bold text-primary">
+                          {priceDisplay.salePrice}
+                        </span>
+                        <span className="text-muted-foreground">/{priceDisplay.period}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground line-through">
+                        {priceDisplay.price}
+                      </div>
+                      <div className="text-xs font-medium text-primary">ON SALE</div>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold">{priceDisplay.price}</span>
+                      <span className="text-muted-foreground">/{priceDisplay.period}</span>
+                    </>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -138,4 +219,3 @@ export default function MembershipPage() {
     </div>
   );
 }
-

@@ -12,9 +12,13 @@ export default function SignInScreen() {
         {/* Branding */}
         <div className="text-center space-y-4">
           <img
-            src="/assets/generated/wholesaleai-wordmark.dim_1200x300.png"
-            alt="WholesaleAI"
+            src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
+            alt="Wholesale Lens"
             className="mx-auto h-14 w-auto mb-6"
+            width="1200"
+            height="300"
+            loading="eager"
+            decoding="async"
           />
           <h1 className="text-4xl font-bold tracking-tight text-foreground">
             Deal Intelligence System

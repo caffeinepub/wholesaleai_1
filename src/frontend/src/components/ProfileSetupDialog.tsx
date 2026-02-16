@@ -14,7 +14,7 @@ export default function ProfileSetupDialog() {
   const [email, setEmail] = useState('');
   const saveProfile = useSaveCallerUserProfile();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
       saveProfile.mutate({
@@ -27,6 +27,7 @@ export default function ProfileSetupDialog() {
   };
 
   const isNameValid = name.trim().length > 0;
+  const isSubmitting = saveProfile.isPending;
 
   return (
     <Dialog open={true} onOpenChange={() => {}}>
@@ -39,7 +40,7 @@ export default function ProfileSetupDialog() {
           <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
             <User className="h-7 w-7 text-primary" />
           </div>
-          <DialogTitle className="text-2xl text-center">Welcome to WholesaleAI!</DialogTitle>
+          <DialogTitle className="text-2xl text-center">Welcome to Wholesale Lens!</DialogTitle>
           <DialogDescription className="text-center text-base">
             Let's get you set up in just a moment. We need a few details to personalize your experience and help you start tracking deals right away.
           </DialogDescription>
@@ -59,6 +60,7 @@ export default function ProfileSetupDialog() {
               required
               className="h-11"
               autoFocus
+              disabled={isSubmitting}
             />
             <p className="text-xs text-muted-foreground">
               This is how you'll be identified in the system
@@ -77,6 +79,7 @@ export default function ProfileSetupDialog() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="(555) 123-4567"
               className="h-11"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -92,6 +95,7 @@ export default function ProfileSetupDialog() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="h-11"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -108,19 +112,19 @@ export default function ProfileSetupDialog() {
             <Button
               type="submit"
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-11 text-base"
-              disabled={!isNameValid || saveProfile.isPending}
+              disabled={!isNameValid || isSubmitting}
             >
-              {saveProfile.isPending ? (
+              {isSubmitting ? (
                 <>
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  Creating Your Profile...
+                  Creating Your Account...
                 </>
               ) : (
                 'Get Started'
               )}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              You'll start with a <span className="font-medium text-foreground">Basic</span> membership. Upgrade anytime to unlock advanced features.
+              You'll start with a <span className="font-semibold text-foreground">Basic</span> membership. Upgrade anytime to unlock more features.
             </p>
           </div>
         </form>

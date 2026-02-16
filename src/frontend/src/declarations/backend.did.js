@@ -121,6 +121,18 @@ export const Deal = IDL.Record({
   'estimatedProfit' : IDL.Nat,
   'assignedBuyer' : IDL.Opt(IDL.Nat),
 });
+export const MembershipPricing = IDL.Record({
+  'annualPriceCents' : IDL.Nat,
+  'monthlyPriceCents' : IDL.Nat,
+  'salePriceCents' : IDL.Opt(IDL.Nat),
+  'isOnSale' : IDL.Bool,
+});
+export const MembershipCatalog = IDL.Record({
+  'pro' : MembershipPricing,
+  'enterprise' : MembershipPricing,
+  'lastUpdated' : IDL.Int,
+  'basic' : MembershipPricing,
+});
 
 export const idlService = IDL.Service({
   '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -195,6 +207,7 @@ export const idlService = IDL.Service({
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getContract' : IDL.Func([IDL.Nat], [IDL.Opt(ContractDocument)], ['query']),
   'getDeal' : IDL.Func([IDL.Nat], [IDL.Opt(Deal)], ['query']),
+  'getMembershipCatalog' : IDL.Func([], [MembershipCatalog], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -255,6 +268,12 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'updateMembershipPricing' : IDL.Func(
+      [MembershipPricing, MembershipPricing, MembershipPricing],
+      [],
+      [],
+    ),
+  'updateMembershipTier' : IDL.Func([IDL.Principal, MembershipTier], [], []),
   'uploadContract' : IDL.Func(
       [
         IDL.Nat,
@@ -391,6 +410,18 @@ export const idlFactory = ({ IDL }) => {
     'estimatedProfit' : IDL.Nat,
     'assignedBuyer' : IDL.Opt(IDL.Nat),
   });
+  const MembershipPricing = IDL.Record({
+    'annualPriceCents' : IDL.Nat,
+    'monthlyPriceCents' : IDL.Nat,
+    'salePriceCents' : IDL.Opt(IDL.Nat),
+    'isOnSale' : IDL.Bool,
+  });
+  const MembershipCatalog = IDL.Record({
+    'pro' : MembershipPricing,
+    'enterprise' : MembershipPricing,
+    'lastUpdated' : IDL.Int,
+    'basic' : MembershipPricing,
+  });
   
   return IDL.Service({
     '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -465,6 +496,7 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getContract' : IDL.Func([IDL.Nat], [IDL.Opt(ContractDocument)], ['query']),
     'getDeal' : IDL.Func([IDL.Nat], [IDL.Opt(Deal)], ['query']),
+    'getMembershipCatalog' : IDL.Func([], [MembershipCatalog], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -525,6 +557,12 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'updateMembershipPricing' : IDL.Func(
+        [MembershipPricing, MembershipPricing, MembershipPricing],
+        [],
+        [],
+      ),
+    'updateMembershipTier' : IDL.Func([IDL.Principal, MembershipTier], [], []),
     'uploadContract' : IDL.Func(
         [
           IDL.Nat,

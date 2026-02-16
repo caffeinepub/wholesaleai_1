@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
+import { useBackendActor } from './useBackendActor';
 import type {
   UserProfile,
   Deal,
@@ -10,12 +10,16 @@ import type {
   DealStage,
   Variant_Unsigned_Signed,
   Variant_PurchaseContract_AssignmentContract,
+  MembershipCatalog,
+  MembershipPricing,
+  MembershipTier,
 } from '../backend';
 import { ExternalBlob } from '../backend';
+import { Principal } from '@dfinity/principal';
 
 // User Profile
 export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching: actorFetching, isError: actorError } = useBackendActor();
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
@@ -24,18 +28,19 @@ export function useGetCallerUserProfile() {
       return actor.getCallerUserProfile();
     },
     enabled: !!actor && !actorFetching,
-    retry: false,
+    retry: 1,
   });
 
   return {
     ...query,
     isLoading: actorFetching || query.isLoading,
     isFetched: !!actor && query.isFetched,
+    isError: actorError || query.isError,
   };
 }
 
 export function useSaveCallerUserProfile() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -51,7 +56,7 @@ export function useSaveCallerUserProfile() {
 
 // Deals
 export function useGetDeals() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<Deal[]>({
     queryKey: ['deals'],
@@ -64,7 +69,7 @@ export function useGetDeals() {
 }
 
 export function useGetDeal(dealId: bigint | null) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<Deal | null>({
     queryKey: ['deal', dealId?.toString()],
@@ -77,7 +82,7 @@ export function useGetDeal(dealId: bigint | null) {
 }
 
 export function useCreateDeal() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -112,7 +117,7 @@ export function useCreateDeal() {
 }
 
 export function useUpdateDeal() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -158,7 +163,7 @@ export function useUpdateDeal() {
 }
 
 export function useDeleteDeal() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -173,7 +178,7 @@ export function useDeleteDeal() {
 }
 
 export function useMoveDealToStage() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -190,7 +195,7 @@ export function useMoveDealToStage() {
 
 // Deal Analyzer
 export function useAnalyzeDeal() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
 
   return useMutation({
     mutationFn: async (address: string) => {
@@ -201,7 +206,7 @@ export function useAnalyzeDeal() {
 }
 
 export function useCreateDealFromAnalysis() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -225,7 +230,7 @@ export function useCreateDealFromAnalysis() {
 
 // Buyers
 export function useGetBuyers() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<Buyer[]>({
     queryKey: ['buyers'],
@@ -243,7 +248,7 @@ export function useGetBuyers() {
 }
 
 export function useGetBuyer(buyerId: bigint | null) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<Buyer | null>({
     queryKey: ['buyer', buyerId?.toString()],
@@ -256,7 +261,7 @@ export function useGetBuyer(buyerId: bigint | null) {
 }
 
 export function useCreateBuyer() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -289,7 +294,7 @@ export function useCreateBuyer() {
 }
 
 export function useUpdateBuyer() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -325,7 +330,7 @@ export function useUpdateBuyer() {
 }
 
 export function useDeleteBuyer() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -340,7 +345,7 @@ export function useDeleteBuyer() {
 }
 
 export function useAssignBuyerToDeal() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -357,7 +362,7 @@ export function useAssignBuyerToDeal() {
 
 // Contracts
 export function useGetContractsByDeal(dealId: bigint | null) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<ContractDocument[]>({
     queryKey: ['contracts', dealId?.toString()],
@@ -375,7 +380,7 @@ export function useGetContractsByDeal(dealId: bigint | null) {
 }
 
 export function useUploadContract() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -404,7 +409,7 @@ export function useUploadContract() {
 }
 
 export function useUpdateContractStatus() {
-  const { actor } = useActor();
+  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -430,7 +435,7 @@ export function useUpdateContractStatus() {
 
 // Analytics
 export function useGetAnalytics() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching } = useBackendActor();
 
   return useQuery<AnalyticsData>({
     queryKey: ['analytics'],
@@ -447,3 +452,71 @@ export function useGetAnalytics() {
   });
 }
 
+// Membership Catalog
+export function useGetMembershipCatalog() {
+  const { actor, isFetching } = useBackendActor();
+
+  return useQuery<MembershipCatalog>({
+    queryKey: ['membershipCatalog'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getMembershipCatalog();
+    },
+    enabled: !!actor && !isFetching,
+    retry: 1,
+  });
+}
+
+// Admin Operations
+export function useIsCallerAdmin() {
+  const { actor, isFetching } = useBackendActor();
+
+  return useQuery<boolean>({
+    queryKey: ['isAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      try {
+        return await actor.isCallerAdmin();
+      } catch (error) {
+        console.error('Failed to check admin status:', error);
+        return false;
+      }
+    },
+    enabled: !!actor && !isFetching,
+    retry: false,
+  });
+}
+
+export function useUpdateMembershipPricing() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      basic: MembershipPricing;
+      pro: MembershipPricing;
+      enterprise: MembershipPricing;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateMembershipPricing(params.basic, params.pro, params.enterprise);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['membershipCatalog'] });
+    },
+  });
+}
+
+export function useUpdateMembershipTier() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { userId: Principal; tier: MembershipTier }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateMembershipTier(params.userId, params.tier);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}

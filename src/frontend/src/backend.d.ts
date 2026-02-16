@@ -22,6 +22,18 @@ export interface AnalyticsData {
     leadToContractPercent: number;
     profitByZipCode: Array<[string, bigint]>;
 }
+export interface MembershipPricing {
+    annualPriceCents: bigint;
+    monthlyPriceCents: bigint;
+    salePriceCents?: bigint;
+    isOnSale: boolean;
+}
+export interface MembershipCatalog {
+    pro: MembershipPricing;
+    enterprise: MembershipPricing;
+    lastUpdated: bigint;
+    basic: MembershipPricing;
+}
 export interface Buyer {
     id: bigint;
     owner: Principal;
@@ -136,6 +148,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getContract(contractId: bigint): Promise<ContractDocument | null>;
     getDeal(dealId: bigint): Promise<Deal | null>;
+    getMembershipCatalog(): Promise<MembershipCatalog>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listBuyers(): Promise<Array<Buyer>>;
@@ -146,5 +159,7 @@ export interface backendInterface {
     updateBuyer(buyerId: bigint, name: string, phone: string, email: string, preferredAreas: Array<string>, budgetMin: bigint, budgetMax: bigint, propertyTypePreference: string, notes: string): Promise<void>;
     updateContractStatus(contractId: bigint, signingStatus: Variant_Unsigned_Signed, closingDate: bigint | null, emd: bigint | null): Promise<void>;
     updateDeal(dealId: bigint, stage: DealStage, sellerName: string, sellerPhone: string, address: string, arv: bigint, repairs: bigint, askingPrice: bigint, yourOffer: bigint, assignedBuyer: bigint | null, contractDeadline: bigint | null, notes: string, estimatedProfit: bigint, actualProfit: bigint | null): Promise<void>;
+    updateMembershipPricing(basic: MembershipPricing, pro: MembershipPricing, enterprise: MembershipPricing): Promise<void>;
+    updateMembershipTier(userId: Principal, tier: MembershipTier): Promise<void>;
     uploadContract(dealId: bigint, documentType: Variant_PurchaseContract_AssignmentContract, fileName: string, closingDate: bigint | null, emd: bigint | null, blob: ExternalBlob): Promise<bigint>;
 }

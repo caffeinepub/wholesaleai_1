@@ -7,6 +7,7 @@ export const COPY = {
     contracts: 'Contracts',
     analytics: 'Analytics',
     membership: 'Membership',
+    admin: 'Admin Panel',
   },
   errors: {
     unauthorized: 'You do not have permission to access this feature',
@@ -24,5 +25,14 @@ export const COPY = {
     contracts: 'Contracts feature requires Enterprise membership',
     analytics: 'Analytics feature requires Enterprise membership',
   },
+  admin: {
+    accessDenied: 'Access Denied',
+    accessDeniedMessage: 'You do not have permission to access the Admin Panel. Only administrators can manage membership pricing and grant memberships.',
+    catalogSection: 'Membership Catalog',
+    catalogDescription: 'Configure pricing and sales for membership tiers',
+    grantSection: 'Grant Membership',
+    grantDescription: 'Update a user\'s membership tier',
+    savePricing: 'Save Pricing',
+    grantMembership: 'Grant Membership',
+  },
 };
-

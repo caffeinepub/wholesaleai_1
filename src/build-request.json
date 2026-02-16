@@ -1,76 +1,111 @@
 {
   "kind": "build_request",
-  "title": "Improve the initial startup popup / first impression screens",
-  "projectName": "WholesaleAI",
+  "title": "Admin-managed memberships with sales and free grants",
+  "projectName": "Wholesale Lens",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Redesign the initial profile setup popup (the required welcome dialog shown after first sign-in) to feel more polished and helpful while keeping the same functional gating behavior (cannot dismiss until a profile is created).",
-      "target": "frontend",
+      "text": "Add backend support for an admin-managed membership catalog that defines the public pricing and sale status for each membership tier (Basic/Pro/Enterprise), and expose a query endpoint for the frontend to read the current catalog.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-9"
+          "msg-4"
         ],
         "quotes": [
-          "Can you make the thing that pops up at the beginning to something better"
+          "Lets set up memberships And make me a admin panel so I can put memberships on sale and give free ones"
         ]
       },
       "acceptanceCriteria": [
-        "When a signed-in user has no profile, the app shows a redesigned ProfileSetupDialog and the user cannot dismiss it by clicking outside (gating remains required).",
-        "The dialog includes clearer onboarding copy in English explaining why the app needs the information and what happens next.",
-        "Name remains required; phone and email remain optional; the primary CTA is disabled until name is non-empty.",
-        "Submission shows an in-button loading state (existing pending behavior preserved) and the UI clearly indicates success by closing the dialog once the profile is saved.",
-        "If saving fails, the user sees an in-dialog error message (English) and can retry without losing typed input."
+        "Backend stores membership catalog data (price + billing period + optional sale price/flag) per tier.",
+        "A public (non-admin) query returns the membership catalog for use by the Membership Plans page.",
+        "If no catalog has been configured yet, the backend returns sensible defaults matching the current UI values (Basic $15/month, Pro $20/month, Enterprise $90/year) so existing behavior does not break."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Improve the very first screen shown on app launch for unauthenticated users (the sign-in screen) with a more premium layout and clearer value proposition, without changing the Internet Identity login flow.",
-      "target": "frontend",
+      "text": "Add backend admin endpoints to update membership catalog pricing and put memberships on sale (enable/disable sale and set sale price) with access restricted to canister admins.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-9"
+          "msg-4"
         ],
         "quotes": [
-          "Can you make the thing that pops up at the beginning to something better"
+          "make me a admin panel so I can put memberships on sale"
         ]
       },
       "acceptanceCriteria": [
-        "Unauthenticated users still land on the SignInScreen and can sign in using the existing Internet Identity login action.",
-        "The sign-in screen layout is visually upgraded (better spacing, typography hierarchy, and a contained/card-like composition) while remaining responsive from mobile to desktop.",
-        "All user-facing text remains in English and the existing wordmark image continues to render correctly.",
-        "The loading state while connecting (spinner + 'Connecting...') remains visible and accessible."
+        "Only principals recognized as admins by the existing AccessControl/authorization system can update the membership catalog; non-admin calls trap with an authorization error.",
+        "Admin can set regular price and billing period, and can enable/disable a sale and set a sale price for a tier.",
+        "Updates persist and are reflected immediately when the public catalog query is called."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Apply a single coherent visual theme to the startup experience (sign-in + profile setup popup + loading states) with consistent styling (color accents, typography, and component rhythm). Avoid blue/purple as the primary accent.",
-      "target": "frontend",
+      "text": "Add backend admin functionality to grant (and revoke/downgrade) memberships for users without payment by setting a user's membership tier as an admin operation.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-9"
+          "msg-4"
         ],
         "quotes": [
-          "Can you make the thing that pops up at the beginning to something better"
+          "give free ones"
         ]
       },
       "acceptanceCriteria": [
-        "Sign-in screen, profile setup dialog, and the two loading states in App.tsx share consistent typography and spacing.",
-        "The theme uses a distinct accent color that is not primarily blue or purple and is applied consistently to primary CTAs and focus states.",
-        "No changes are made to read-only UI component sources under frontend/src/components/ui; composition/wrapping is used instead where needed."
+        "Only admins can change another user's membership tier; non-admin calls trap with an authorization error.",
+        "Admin can set a target user's membership tier by specifying the user's Principal and the desired tier.",
+        "After an admin grants a tier, the affected user sees the updated tier via getCallerUserProfile and gated features (Pro/Enterprise checks) respect the new tier."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Create a new Admin Panel page in the frontend that is visible/accessible only to admins and provides UI to (a) manage membership catalog pricing/sale settings and (b) grant free memberships to a user by entering their Principal and selecting a tier.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "make me a admin panel so I can put memberships on sale and give free ones"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A new navigation entry and route exist for an Admin Panel page; non-admin users cannot access the page (they see an access denied state or are redirected away).",
+        "Admin Panel includes a Membership Catalog section with editable fields per tier (price, period, sale on/off, sale price) and a Save action that calls the admin backend endpoint.",
+        "Admin Panel includes a Grant Membership section where the admin inputs a user's Principal and selects a tier, then submits to grant/update that user's membership tier.",
+        "All user-facing text on this page is in English and errors are surfaced via existing toast/error patterns."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Update the Membership Plans page to load plan prices (and sale state) from the backend membership catalog instead of using hard-coded prices, and display sale pricing clearly when a tier is on sale.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "put memberships on sale"
+        ]
+      },
+      "acceptanceCriteria": [
+        "MembershipPage reads membership pricing from a backend query and uses it to render each plan's price/period.",
+        "When a tier is on sale, the UI displays both the original price and the sale price (e.g., original struck through and sale emphasized).",
+        "If the backend catalog query fails, the UI falls back to the current hard-coded plan values and shows a non-blocking error message."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose instead of modifying).",
-    "Do not change authentication providers/flow; continue using Internet Identity.",
-    "Do not add new backend features/state for this request; keep changes limited to UI/UX of the initial screens."
+    "Backend must remain a single Motoko actor in backend/main.mo.",
+    "Do not edit files under frontend/src/components/ui or any other frontend immutablePaths listed in SYSTEM_CONTEXT; compose existing UI components instead.",
+    "Internet Identity remains the only authentication mechanism; admin authorization must use the existing AccessControl/authorization system already included in backend/main.mo.",
+    "No third-party payment processing integration is required/added (the current app already notes payments are not implemented)."
   ],
   "nonGoals": [
-    "Adding payment integration or membership purchase flows.",
-    "Adding new onboarding steps that change required data fields beyond the existing name/phone/email.",
-    "Changing backend schema or profile semantics."
+    "Implementing real payment checkout, subscriptions, invoicing, or Stripe integration.",
+    "Adding third-party auth providers beyond Internet Identity.",
+    "Building a full CRM-style user directory; the admin flow may rely on granting by Principal as input."
   ],
   "imageRequirements": {
     "required": [],

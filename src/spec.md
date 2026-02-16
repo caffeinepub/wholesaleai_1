@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Improve the first-impression startup experience by polishing the unauthenticated sign-in screen and the required first-time profile setup dialog, with a cohesive visual theme.
+**Goal:** Enable admins to manage membership plan pricing (including sales) and grant/revoke memberships to users, while keeping the Membership Plans page dynamically driven by backend configuration.
 
 **Planned changes:**
-- Redesign the required ProfileSetupDialog (shown after first sign-in when no profile exists) with clearer English onboarding copy, improved layout, and the same non-dismissible gating behavior until a profile is created.
-- Keep existing profile field rules and behaviors: name required (CTA disabled until non-empty), phone/email optional, in-button loading state on submit, close dialog on success, and show an in-dialog retryable error on failure without losing typed input.
-- Upgrade the unauthenticated SignInScreen to a more premium, responsive layout (spacing/typography/card-like composition) while keeping the Internet Identity login flow unchanged and preserving the existing loading state (“Connecting...” + spinner).
-- Apply a single consistent theme across sign-in, profile setup, and startup loading states (typography, spacing rhythm, and a non-blue/non-purple primary accent color used for CTAs and focus states), without modifying read-only UI component sources under `frontend/src/components/ui` (compose/wrap instead).
+- Add backend storage and public query for a membership catalog (Basic/Pro/Enterprise) including price, billing period, and optional sale settings, with sensible defaults when unconfigured.
+- Add admin-only backend endpoints to update membership catalog pricing/sale settings using existing admin authorization.
+- Add admin-only backend functionality to set a user’s membership tier (grant/revoke/downgrade) by specifying the user’s Principal and desired tier.
+- Create a frontend Admin Panel page (admin-only) to manage membership catalog settings and grant memberships by Principal.
+- Update the Membership Plans page to load pricing/sale state from the backend, clearly display sale pricing, and fall back to current hard-coded values on query failure with a non-blocking error.
 
-**User-visible outcome:** Users see a more polished sign-in screen and a clearer, more helpful required profile setup popup on first sign-in, with consistent styling and unchanged login/profile functionality.
+**User-visible outcome:** Admins can open an Admin Panel to set membership prices, toggle sales and sale prices, and grant/revoke tiers for users by Principal; all users see Membership Plans reflect current backend pricing (including sales) with a safe fallback if loading fails.

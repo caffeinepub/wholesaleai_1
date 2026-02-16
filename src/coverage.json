@@ -1,73 +1,90 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T18:03:46.815Z",
+  "generatedAt": "2026-02-16T18:51:35.246Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 5,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Redesign the initial profile setup popup (the required welcome dialog shown after first sign-in) to feel more polished and helpful while keeping the same functional gating behavior (cannot dismiss until a profile is created).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/ProfileSetupDialog.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/ProfileSetupDialog.tsx"
-        ]
+        "summary": "Add backend support for an admin-managed membership catalog that defines the public pricing and sale status for each membership tier (Basic/Pro/Enterprise), and expose a query endpoint for the frontend to read the current catalog.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Improve the very first screen shown on app launch for unauthenticated users (the sign-in screen) with a more premium layout and clearer value proposition, without changing the Internet Identity login flow.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/SignInScreen.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/SignInScreen.tsx",
-          "frontend/src/App.tsx"
-        ]
+        "summary": "Add backend admin endpoints to update membership catalog pricing and put memberships on sale (enable/disable sale and set sale price) with access restricted to canister admins.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Apply a single coherent visual theme to the startup experience (sign-in + profile setup popup + loading states) with consistent styling (color accents, typography, and component rhythm). Avoid blue/purple as the primary accent.",
+        "summary": "Add backend admin functionality to grant (and revoke/downgrade) memberships for users without payment by setting a user's membership tier as an admin operation.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Create a new Admin Panel page in the frontend that is visible/accessible only to admins and provides UI to (a) manage membership catalog pricing/sale settings and (b) grant free memberships to a user by entering their Principal and selecting a tier.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/index.css",
-          "frontend/src/components/StartupLoadingScreen.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/SignInScreen.tsx",
-          "frontend/src/components/ProfileSetupDialog.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/AccessDeniedScreen.tsx",
+          "frontend/src/pages/AdminPanelPage.tsx",
+          "frontend/src/components/AppShell.tsx",
+          "frontend/src/lib/copy.ts"
         ],
         "matchedFiles": [
-          "frontend/src/index.css",
-          "frontend/src/components/StartupLoadingScreen.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/SignInScreen.tsx",
-          "frontend/src/components/ProfileSetupDialog.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/AccessDeniedScreen.tsx",
+          "frontend/src/pages/AdminPanelPage.tsx",
+          "frontend/src/components/AppShell.tsx",
+          "frontend/src/lib/copy.ts"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Update the Membership Plans page to load plan prices (and sale state) from the backend membership catalog instead of using hard-coded prices, and display sale pricing clearly when a tier is on sale.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/lib/money.ts",
+          "frontend/src/pages/MembershipPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/lib/money.ts",
+          "frontend/src/pages/MembershipPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
-    "build-template/README.md",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/ProfileSetupDialog.tsx",
-    "frontend/src/components/SignInScreen.tsx",
-    "frontend/src/components/StartupLoadingScreen.tsx",
-    "frontend/src/config.ts",
-    "frontend/src/index.css",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/AccessDeniedScreen.tsx",
+    "frontend/src/components/AppShell.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/copy.ts",
+    "frontend/src/lib/money.ts",
+    "frontend/src/pages/AdminPanelPage.tsx",
+    "frontend/src/pages/MembershipPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

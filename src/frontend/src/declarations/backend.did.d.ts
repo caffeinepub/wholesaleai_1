@@ -91,6 +91,18 @@ export type DealStage = { 'Closed' : null } |
   { 'Negotiating' : null } |
   { 'Assigned' : null };
 export type ExternalBlob = Uint8Array;
+export interface MembershipCatalog {
+  'pro' : MembershipPricing,
+  'enterprise' : MembershipPricing,
+  'lastUpdated' : bigint,
+  'basic' : MembershipPricing,
+}
+export interface MembershipPricing {
+  'annualPriceCents' : bigint,
+  'monthlyPriceCents' : bigint,
+  'salePriceCents' : [] | [bigint],
+  'isOnSale' : boolean,
+}
 export type MembershipTier = { 'Pro' : null } |
   { 'Enterprise' : null } |
   { 'Basic' : null };
@@ -154,6 +166,7 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getContract' : ActorMethod<[bigint], [] | [ContractDocument]>,
   'getDeal' : ActorMethod<[bigint], [] | [Deal]>,
+  'getMembershipCatalog' : ActorMethod<[], MembershipCatalog>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listBuyers' : ActorMethod<[], Array<Buyer>>,
@@ -204,6 +217,11 @@ export interface _SERVICE {
     ],
     undefined
   >,
+  'updateMembershipPricing' : ActorMethod<
+    [MembershipPricing, MembershipPricing, MembershipPricing],
+    undefined
+  >,
+  'updateMembershipTier' : ActorMethod<[Principal, MembershipTier], undefined>,
   'uploadContract' : ActorMethod<
     [
       bigint,

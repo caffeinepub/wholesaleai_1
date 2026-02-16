@@ -1,81 +1,68 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "WholesaleAI startup experience polish (sign-in + profile setup + loading theme)",
+  "title": "Wholesale Lens — Admin Panel + Dynamic Membership Catalog UI",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Polish ProfileSetupDialog UX/copy while preserving required gating, validation, and resilient error handling.",
+      "id": "REQ-4",
+      "summary": "Add an admin-only Admin Panel page to manage membership catalog pricing/sales and grant free memberships by Principal.",
       "acceptanceCriteria": [
-        "When a signed-in user has no profile, the app shows a redesigned ProfileSetupDialog and the user cannot dismiss it by clicking outside (gating remains required).",
-        "The dialog includes clearer onboarding copy in English explaining why the app needs the information and what happens next.",
-        "Name remains required; phone and email remain optional; the primary CTA is disabled until name is non-empty.",
-        "Submission shows an in-button loading state (existing pending behavior preserved) and the UI clearly indicates success by closing the dialog once the profile is saved.",
-        "If saving fails, the user sees an in-dialog error message (English) and can retry without losing typed input."
+        "A new navigation entry and route exist for an Admin Panel page; non-admin users cannot access the page (they see an access denied state or are redirected away).",
+        "Admin Panel includes a Membership Catalog section with editable fields per tier (price, period, sale on/off, sale price) and a Save action that calls the admin backend endpoint.",
+        "Admin Panel includes a Grant Membership section where the admin inputs a user's Principal and selects a tier, then submits to grant/update that user's membership tier.",
+        "All user-facing text on this page is in English and errors are surfaced via existing toast/error patterns."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ProfileSetupDialog.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Redesign the dialog layout and onboarding copy (English) while keeping the existing get/save profile behavior; continue using the shadcn-ui Dialog, Button, Input, and Label components for a premium composition (Verify the component's usage instructions before implementing). Add stronger gating (prevent outside click and escape-to-close), keep name required with CTA disabled until non-empty, keep phone/email optional, show an in-button pending state, and add an in-dialog error message on save failure that preserves typed input for retries. Note: continue using the authorization component’s recommended profile setup flow (getCallerUserProfile/saveCallerUserProfile) as the source of truth (Verify the component's usage instructions before implementing)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Upgrade the unauthenticated SignInScreen with a more premium responsive layout and clearer value proposition while keeping the existing Internet Identity login flow and loading state.",
-      "acceptanceCriteria": [
-        "Unauthenticated users still land on the SignInScreen and can sign in using the existing Internet Identity login action.",
-        "The sign-in screen layout is visually upgraded (better spacing, typography hierarchy, and a contained/card-like composition) while remaining responsive from mobile to desktop.",
-        "All user-facing text remains in English and the existing wordmark image continues to render correctly.",
-        "The loading state while connecting (spinner + 'Connecting...') remains visible and accessible."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/SignInScreen.tsx",
-          "operation": "modify",
-          "description": "Refactor the sign-in screen into a more premium, responsive card-like composition (improved spacing, typographic hierarchy, and clearer value proposition) while preserving the existing Internet Identity login action and the accessible connecting state (spinner + 'Connecting...'). Ensure the wordmark continues to render correctly and all user-facing text stays in English. Continue using the shadcn-ui Button component for consistent CTA styling (Verify the component's usage instructions before implementing)."
+          "description": "Add React Query hooks/mutations needed by the Admin Panel: query current admin status using backendInterface.isCallerAdmin() and add mutations for backendInterface.updateMembershipPricing(...) and backendInterface.updateMembershipTier(...). Use the existing authorization component patterns for handling authorization errors from backend traps gracefully in the UI; verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Ensure unauthenticated users still render SignInScreen as the initial route/view without altering the Internet Identity auth flow; update any surrounding layout wrappers if needed to support the upgraded sign-in composition."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Apply a coherent non-blue/non-purple accent theme and consistent startup styling across sign-in, profile setup, and loading states without modifying immutable UI component sources.",
-      "acceptanceCriteria": [
-        "Sign-in screen, profile setup dialog, and the two loading states in App.tsx share consistent typography and spacing.",
-        "The theme uses a distinct accent color that is not primarily blue or purple and is applied consistently to primary CTAs and focus states.",
-        "No changes are made to read-only UI component sources under frontend/src/components/ui; composition/wrapping is used instead where needed."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Adjust global theme tokens (CSS variables) to enforce a single coherent accent color that is not primarily blue or purple, and ensure ring/focus/primary tokens align so startup CTAs and focus states look consistent across sign-in, profile setup, and loading states."
-        },
-        {
-          "path": "frontend/src/components/StartupLoadingScreen.tsx",
+          "path": "frontend/src/components/AccessDeniedScreen.tsx",
           "operation": "create",
-          "description": "Create a shared startup loading component that standardizes typography, spacing, and spinner styling for both initial app initialization and profile-loading states; compose using existing styling conventions and any existing shadcn-ui primitives only via imports (do not modify frontend/src/components/ui; Verify the component's usage instructions before implementing)."
+          "description": "Create a reusable AccessDeniedScreen component (English copy) that matches existing styling patterns (compose existing shadcn/ui components such as Card/Button) and can be used by admin-gated views. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Replace the two bespoke loading UIs (initial auth initialization and profile loading) with the shared StartupLoadingScreen to ensure consistent rhythm, typography, spacing, and accent usage across startup states."
+          "path": "frontend/src/pages/AdminPanelPage.tsx",
+          "operation": "create",
+          "description": "Implement the Admin Panel page UI: (1) Membership Catalog editor for Basic/Pro/Enterprise (price, billing period choice, sale toggle, sale price) prefilled from getMembershipCatalog; (2) Save action calling updateMembershipPricing; (3) Grant Membership form that parses a provided Principal text and calls updateMembershipTier; (4) Admin-only guard that shows AccessDeniedScreen (or navigates away) when not an admin; (5) Use existing toast patterns (sonner) for success/errors. Use authorization component guidance for admin-only UI gating and error handling; verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/SignInScreen.tsx",
+          "path": "frontend/src/components/AppShell.tsx",
           "operation": "modify",
-          "description": "Align SignInScreen visual rhythm (spacing/typography), accent usage (primary CTA + focus states), and any supporting text styling with the shared startup theme; keep Internet Identity flow unchanged."
+          "description": "Wire the Admin Panel into the app shell: extend the internal Page union, lazy-load AdminPanelPage, add a navigation entry that is only visible when the current caller is an admin (using the new admin-status hook), and ensure non-admins cannot render the admin page even if they attempt to navigate to it. Use authorization component guidance for admin-only UI gating; verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/ProfileSetupDialog.tsx",
+          "path": "frontend/src/lib/copy.ts",
           "operation": "modify",
-          "description": "Align ProfileSetupDialog spacing/typography and primary CTA/focus styling with the shared startup theme; keep gating behavior and profile field semantics unchanged. Continue composing with existing shadcn-ui Dialog/Button/Input/Label components without modifying frontend/src/components/ui (Verify the component's usage instructions before implementing)."
+          "description": "Add English UI copy strings for the Admin Panel nav label, section headings, and access denied messaging (reused by AccessDeniedScreen/AdminPanelPage) consistent with existing COPY structure."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Load membership plan pricing and sale state from the backend catalog and render sale pricing with a robust fallback.",
+      "acceptanceCriteria": [
+        "MembershipPage reads membership pricing from a backend query and uses it to render each plan's price/period.",
+        "When a tier is on sale, the UI displays both the original price and the sale price (e.g., original struck through and sale emphasized).",
+        "If the backend catalog query fails, the UI falls back to the current hard-coded plan values and shows a non-blocking error message."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a React Query hook for fetching the membership catalog via backendInterface.getMembershipCatalog() with appropriate enabled conditions based on actor readiness and a non-blocking error handling strategy (to support UI fallback). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/lib/money.ts",
+          "operation": "create",
+          "description": "Add small formatting helpers for displaying bigint cent amounts as USD strings (e.g., cents -> \"$15\") and for selecting the display amount based on billing period, to keep MembershipPage/AdminPanelPage logic readable."
+        },
+        {
+          "path": "frontend/src/pages/MembershipPage.tsx",
+          "operation": "modify",
+          "description": "Replace hard-coded plan price rendering with values loaded from the backend membership catalog hook; clearly render sale state per tier (original price visually de-emphasized/struck through + sale price emphasized) and preserve the current plan feature list. On catalog query failure, fall back to the current hard-coded values (Basic $15/month, Pro $20/month, Enterprise $90/year) and show a non-blocking toast error."
         }
       ]
     }
