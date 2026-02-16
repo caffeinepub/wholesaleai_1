@@ -1,60 +1,39 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Stabilize the app for launch: fix profile loading error, ensure all content/pages load reliably, and add a Contact Us option with the provided email.",
+  "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Users see error: \"Failed to load your profile. This may be a temporary issue.\""
+    "Sidebar gets stuck when clicked; expected behavior is that the tab/content panel should pop up (app currently not usable)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-startup-error-failed-to-load-your-profile-this-may-be-a-temporary-issue-by-ensuring-authenticated-users-can-successfully-fetch-and-if-needed-initialize-their-caller-profile-on-first-login-including-brand-new-users-who-have-no-existing-profile-yet",
-      "title": "Fix the startup error \"Failed to load your profile. This may be a temporary issue.\" by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users who have no existing profile yet.",
+      "id": "feature-fix-the-authenticated-app-navigation-so-that-clicking-a-sidebar-item-reliably-switches-the-main-content-view-the-selected-page-must-render-in-the-main-content-area-and-not-appear-stuck-in-the-sidebar",
+      "title": "Fix the authenticated app navigation so that clicking a sidebar item reliably switches the main content view (the selected page must render in the main content area and not appear “stuck” in the sidebar).",
       "reqIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-visible-contact-us-option-in-the-authenticated-app-ui-that-opens-the-user-s-email-client-to-email-wholesalensrealestate-gmail-com-e-g-via-a-mailto-link",
-      "title": "Add a visible \"Contact Us\" option in the authenticated app UI that opens the user’s email client to email wholesalensrealestate@gmail.com (e.g., via a mailto: link).",
+      "id": "feature-make-the-sidebar-layout-responsive-and-usable-on-smaller-screens-by-ensuring-the-navigation-can-be-opened-closed-and-that-selecting-a-nav-item-reveals-the-content-panel-e-g-a-collapsible-sidebar-drawer-behavior-on-mobile-widths",
+      "title": "Make the sidebar layout responsive and usable on smaller screens by ensuring the navigation can be opened/closed and that selecting a nav item reveals the content panel (e.g., a collapsible sidebar/drawer behavior on mobile widths).",
       "reqIds": [
-        "REQ-2"
+        "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-launch-reliability-by-adding-user-facing-recovery-paths-when-critical-startup-queries-fail-actor-initialization-and-profile-fetch-including-a-support-pathway-that-points-users-to-the-new-contact-us-email-when-startup-errors-persist",
-      "title": "Improve launch reliability by adding user-facing recovery paths when critical startup queries fail (actor initialization and profile fetch), including a support pathway that points users to the new Contact Us email when startup errors persist.",
+      "id": "feature-resolve-any-runtime-ui-errors-that-prevent-normal-use-of-the-authenticated-app-shell-including-errors-triggered-by-page-switching-and-ensure-there-are-no-blocking-console-errors-during-basic-navigation",
+      "title": "Resolve any runtime/UI errors that prevent normal use of the authenticated app shell (including errors triggered by page switching) and ensure there are no blocking console errors during basic navigation.",
       "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-apply-a-cohesive-launch-ready-visual-theme-polish-across-the-authenticated-shell-and-startup-screens-typography-spacing-and-a-warm-real-estate-ledger-feel-keeping-the-current-branding-and-avoiding-introducing-new-product-features",
-      "title": "Apply a cohesive, launch-ready visual theme polish across the authenticated shell and startup screens (typography, spacing, and a warm real-estate/ledger feel), keeping the current branding and avoiding introducing new product features.",
-      "reqIds": [
-        "REQ-4"
+        "REQ-7"
       ],
       "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Add a 'Contact Us' section/link that emails wholesalensrealestate@gmail.com",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Improve app reliability/performance so everything loads correctly and is launch-ready for going live",
-      "reqIds": [],
-      "status": "pending"
-    }
-  ],
+  "new_feature_requests": [],
   "projectName": "Wholesale Lens",
   "clarification_mode": "instant",
   "clarification_rounds": 0

@@ -1,100 +1,71 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T20:04:50.295Z",
+  "generatedAt": "2026-02-16T20:11:05.769Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "Fix the startup error \"Failed to load your profile. This may be a temporary issue.\" by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users who have no existing profile yet.",
+        "id": "REQ-5",
+        "summary": "Fix the authenticated app navigation so that clicking a sidebar item reliably switches the main content view (the selected page must render in the main content area and not appear “stuck” in the sidebar).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/components/ProfileSetupDialog.tsx"
+          "frontend/src/components/AppShell.tsx",
+          "frontend/src/components/AppShellErrorBoundary.tsx",
+          "frontend/src/components/AppShell.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/components/ProfileSetupDialog.tsx"
+          "frontend/src/components/AppShell.tsx",
+          "frontend/src/components/AppShellErrorBoundary.tsx",
+          "frontend/src/components/AppShell.tsx"
         ]
       },
       {
-        "id": "REQ-2",
-        "summary": "Add a visible \"Contact Us\" option in the authenticated app UI that opens the user’s email client to email wholesalensrealestate@gmail.com (e.g., via a mailto: link).",
+        "id": "REQ-6",
+        "summary": "Make the sidebar layout responsive and usable on smaller screens by ensuring the navigation can be opened/closed and that selecting a nav item reveals the content panel (e.g., a collapsible sidebar/drawer behavior on mobile widths).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/lib/support.ts",
           "frontend/src/components/AppShell.tsx",
-          "frontend/src/lib/copy.ts"
+          "frontend/src/hooks/useMediaQuery.ts",
+          "frontend/src/components/AppShell.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/lib/support.ts",
           "frontend/src/components/AppShell.tsx",
-          "frontend/src/lib/copy.ts"
+          "frontend/src/hooks/useMediaQuery.ts",
+          "frontend/src/components/AppShell.tsx"
         ]
       },
       {
-        "id": "REQ-3",
-        "summary": "Improve launch reliability by adding user-facing recovery paths when critical startup queries fail (actor initialization and profile fetch), including a support pathway that points users to the new Contact Us email when startup errors persist.",
+        "id": "REQ-7",
+        "summary": "Resolve any runtime/UI errors that prevent normal use of the authenticated app shell (including errors triggered by page switching) and ensure there are no blocking console errors during basic navigation.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/StartupErrorScreen.tsx",
           "frontend/src/App.tsx",
-          "frontend/src/components/PageQueryErrorState.tsx"
+          "frontend/src/components/AppShellErrorBoundary.tsx",
+          "frontend/src/components/AppShell.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/StartupErrorScreen.tsx",
           "frontend/src/App.tsx",
-          "frontend/src/components/PageQueryErrorState.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Apply a cohesive, launch-ready visual theme polish across the authenticated shell and startup screens (typography, spacing, and a warm real-estate/ledger feel), keeping the current branding and avoiding introducing new product features.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/StartupLoadingScreen.tsx",
-          "frontend/src/components/StartupErrorScreen.tsx",
-          "frontend/src/components/AppShell.tsx",
-          "frontend/src/index.css"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/StartupLoadingScreen.tsx",
-          "frontend/src/components/StartupErrorScreen.tsx",
-          "frontend/src/components/AppShell.tsx",
-          "frontend/src/index.css"
+          "frontend/src/components/AppShellErrorBoundary.tsx",
+          "frontend/src/components/AppShell.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/App.tsx",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
     "frontend/src/components/AppShell.tsx",
-    "frontend/src/components/PageQueryErrorState.tsx",
-    "frontend/src/components/ProfileSetupDialog.tsx",
-    "frontend/src/components/StartupErrorScreen.tsx",
-    "frontend/src/components/StartupLoadingScreen.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/index.css",
-    "frontend/src/lib/copy.ts",
-    "frontend/src/lib/support.ts",
-    "frontend/src/pages/MembershipPage.tsx",
+    "frontend/src/components/AppShellErrorBoundary.tsx",
+    "frontend/src/hooks/useMediaQuery.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -1,9 +1,9 @@
 {
   "frontend/src/index.css": "Global styles with dark theme OKLCH color system featuring deep black backgrounds, warm orange/amber primary accents, enhanced sidebar tokens, and improved font rendering with antialiasing.",
-  "frontend/src/App.tsx": "Main application component with resilient initialization flow that handles profile setup for new users, includes startup timeout watchdog (30s), proper error recovery with retry and contact support, and correct payment route handling.",
+  "frontend/src/App.tsx": "Main application component with resilient initialization flow, proper payment route handling for both success and failure paths (/payment-failure), startup timeout watchdog, and error recovery with retry functionality.",
   "frontend/src/components/SignInScreen.tsx": "Premium sign-in screen with Wholesale Lens branding, card-based layout, value proposition icons, and optimized image loading with explicit dimensions.",
   "frontend/src/components/ProfileSetupDialog.tsx": "Enhanced profile setup dialog with proper form state management, disabled inputs during submission, clear error display, and automatic transition after successful save.",
-  "frontend/src/components/AppShell.tsx": "Main application layout with fully opaque sidebar featuring enhanced visual separation, lazy-loaded pages, admin panel entry, user profile display, contact support button in footer, and window event listener for membership navigation.",
+  "frontend/src/components/AppShell.tsx": "Main application layout with responsive sidebar (persistent on desktop, drawer on mobile), lazy-loaded pages with error boundary protection, proper navigation state management, and mobile menu auto-close on navigation.",
   "frontend/src/pages/DashboardPage.tsx": "Executive dashboard displaying key metrics and monthly performance chart with proper error handling using PageQueryErrorState and retry functionality.",
   "frontend/src/pages/DealAnalyzerPage.tsx": "AI-powered deal analyzer page with address input, analysis results display, and add-to-pipeline functionality.",
   "frontend/src/pages/DealsPipelinePage.tsx": "Deals pipeline page showing deals organized by stage columns with proper error handling, retry actions, and membership upgrade navigation for permission errors.",
@@ -36,5 +36,7 @@
   "frontend/src/pages/PaymentFailurePage.tsx": "Payment canceled/failed page that displays clear messaging, extracts session context from URL, and provides retry path back to membership plans or dashboard.",
   "frontend/tailwind.config.js": "Tailwind configuration with OKLCH color tokens, custom font families (Inter, JetBrains Mono), extended theme for consistent warm orange/amber palette, and custom sidebar shadow utility for enhanced depth and separation.",
   "frontend/src/components/PageQueryErrorState.tsx": "Reusable page-level error state component displaying clear English error messages with retry action, optional secondary action, and optional contact support button.",
-  "frontend/src/lib/support.ts": "Support contact utilities providing centralized email address and mailto link helpers for contacting wholesalensrealestate@gmail.com throughout the app."
+  "frontend/src/lib/support.ts": "Support contact utilities providing centralized email address and mailto link helpers for contacting wholesalensrealestate@gmail.com throughout the app.",
+  "frontend/src/hooks/useMediaQuery.ts": "Custom React hook for detecting media query matches with window resize listener, includes convenience hook useIsMobile for detecting screens under 768px width.",
+  "frontend/src/components/AppShellErrorBoundary.tsx": "React error boundary component that catches rendering errors in page components and displays a user-friendly fallback UI with a reset button to return to the dashboard."
 }

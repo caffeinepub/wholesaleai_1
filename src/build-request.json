@@ -1,91 +1,84 @@
 {
   "kind": "build_request",
-  "title": "Fix profile load failure and add Contact Us email link for launch readiness",
+  "title": "Fix sidebar navigation getting stuck and resolve usability-breaking UI errors",
   "projectName": "Wholesale Lens",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Fix the startup error \"Failed to load your profile. This may be a temporary issue.\" by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users who have no existing profile yet.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "recent-messages-4"
-        ],
-        "quotes": [
-          "I'm getting this error Failed to load your profile. This may be a temporary issue."
-        ]
-      },
-      "acceptanceCriteria": [
-        "After signing in with Internet Identity, the app does not show the StartupErrorScreen for profile loading under normal conditions.",
-        "For a brand-new user (no profile yet), the app reaches the main shell and displays the profile setup dialog (instead of failing with a profile-load error).",
-        "If access control initialization/permissions are the root cause, the backend must no longer trap/throw in a way that prevents first-time users from calling getCallerUserProfile / saving their profile.",
-        "Retry from the error screen successfully recovers when the underlying issue is transient (e.g., temporary network failure)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add a visible \"Contact Us\" option in the authenticated app UI that opens the user’s email client to email wholesalensrealestate@gmail.com (e.g., via a mailto: link).",
+      "id": "REQ-5",
+      "text": "Fix the authenticated app navigation so that clicking a sidebar item reliably switches the main content view (the selected page must render in the main content area and not appear “stuck” in the sidebar).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-4"
+          "msg-4"
         ],
         "quotes": [
-          "can I get a contact us with my email wholesalensrealestate@gmail.com"
+          "It gets stuck on the side bar when you click it the tab should be popped up"
         ]
       },
       "acceptanceCriteria": [
-        "A \"Contact Us\" action is accessible from the main authenticated UI (e.g., in the sidebar/footer area).",
-        "Clicking \"Contact Us\" opens a new email draft addressed to wholesalensrealestate@gmail.com using a mailto link.",
-        "User-facing text is in English and matches the app’s existing styling."
+        "From the authenticated shell, clicking each navigation item (Dashboard, Deal Analyzer, Deals Pipeline, Buyers List, Contracts, Analytics, Membership, Admin Panel) updates the active state in the sidebar and renders the correct page in the main content area.",
+        "The main content area remains visible and usable after navigation (not overlapped/hidden by the sidebar).",
+        "Navigation continues to work after repeated switching between multiple pages without requiring a refresh."
       ]
     },
     {
-      "id": "REQ-3",
-      "text": "Improve launch reliability by adding user-facing recovery paths when critical startup queries fail (actor initialization and profile fetch), including a support pathway that points users to the new Contact Us email when startup errors persist.",
+      "id": "REQ-6",
+      "text": "Make the sidebar layout responsive and usable on smaller screens by ensuring the navigation can be opened/closed and that selecting a nav item reveals the content panel (e.g., a collapsible sidebar/drawer behavior on mobile widths).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-4"
+          "msg-4"
         ],
         "quotes": [
-          "make sure everything loads make this launch able this time so it can go live"
+          "It gets stuck on the side bar when you click it the tab should be popped up"
         ]
       },
       "acceptanceCriteria": [
-        "Startup error screens provide a clear Retry action (existing) and also provide an obvious way to contact support (wholesalensrealestate@gmail.com) when issues persist.",
-        "No infinite loading state occurs during startup; the user either proceeds into the app, sees profile setup, or gets a recoverable error screen with Retry and Contact Us."
+        "On small screens, the navigation can be toggled open and closed, and the main content remains accessible.",
+        "When a user selects a navigation item on small screens, the navigation closes (or otherwise gets out of the way) and the chosen page content is visible.",
+        "The desktop layout keeps a persistent sidebar and does not regress."
       ]
     },
     {
-      "id": "REQ-4",
-      "text": "Apply a cohesive, launch-ready visual theme polish across the authenticated shell and startup screens (typography, spacing, and a warm real-estate/ledger feel), keeping the current branding and avoiding introducing new product features.",
+      "id": "REQ-7",
+      "text": "Resolve any runtime/UI errors that prevent normal use of the authenticated app shell (including errors triggered by page switching) and ensure there are no blocking console errors during basic navigation.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-4"
+          "msg-4"
+        ],
+        "quotes": [
+          "fix all your errors make it usable"
         ]
       },
       "acceptanceCriteria": [
-        "Visual styling updates are consistent across the sidebar, primary buttons, and startup screens.",
-        "Theme uses a coherent palette and typography treatment (do not introduce blue/purple as primary styling unless already present).",
-        "No functional behavior changes are introduced beyond UI polish."
+        "Basic authenticated flow works end-to-end: sign in, land in the app shell, switch pages from the navigation, and interact with scrollable content without crashes.",
+        "No navigation action results in a blank main pane due to an unhandled exception.",
+        "Any existing navigation-related console errors (errors thrown during render, click handlers, or lazy loading of pages) are eliminated or handled with a user-facing fallback state."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "Use English for all user-facing text."
+    "Do not edit files in frontend immutablePaths (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or anything under frontend/src/components/ui).",
+    "Keep all user-facing text in English."
   ],
   "nonGoals": [
-    "Adding third-party customer support tools (chat widgets, ticketing systems).",
-    "Adding email sending from the backend (Contact Us should open the user’s email client via mailto).",
-    "Implementing new payment features or changing membership pricing beyond what is required to fix profile loading."
+    "Adding new product features beyond fixing navigation/usability.",
+    "Changing backend data models or adding new backend endpoints unless strictly necessary to fix the sidebar navigation issue."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

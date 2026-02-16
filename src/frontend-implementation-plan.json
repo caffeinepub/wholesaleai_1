@@ -1,114 +1,83 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Wholesale Lens — Startup profile recovery + Contact Us link + launch-ready polish (frontend)",
+  "title": "Wholesale Lens - Fix sidebar navigation, responsive layout, and navigation-breaking UI errors",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Make first-login profile loading resilient so brand-new authenticated users reach the app and see profile setup instead of a profile-load error.",
+      "id": "REQ-5",
+      "summary": "Ensure sidebar navigation always switches the main content view (no 'stuck in sidebar' rendering) and keeps main panel visible.",
       "acceptanceCriteria": [
-        "After signing in with Internet Identity, the app does not show the StartupErrorScreen for profile loading under normal conditions.",
-        "For a brand-new user (no profile yet), the app reaches the main shell and displays the profile setup dialog (instead of failing with a profile-load error).",
-        "If access control initialization/permissions are the root cause, the backend must no longer trap/throw in a way that prevents first-time users from calling getCallerUserProfile / saving their profile.",
-        "Retry from the error screen successfully recovers when the underlying issue is transient (e.g., temporary network failure)."
+        "From the authenticated shell, clicking each navigation item (Dashboard, Deal Analyzer, Deals Pipeline, Buyers List, Contracts, Analytics, Membership, Admin Panel) updates the active state in the sidebar and renders the correct page in the main content area.",
+        "The main content area remains visible and usable after navigation (not overlapped/hidden by the sidebar).",
+        "Navigation continues to work after repeated switching between multiple pages without requiring a refresh."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/AppShell.tsx",
           "operation": "modify",
-          "description": "Harden the current-user profile query to distinguish between (a) missing profile (treat as `null`/needs setup) vs (b) genuine failures. Use the authorization component’s frontend guidance for actor-dependency loading state and avoiding profile-setup flash; verify the component's usage instructions before implementing."
+          "description": "Fix layout and view-switching reliability by ensuring the selected page renders only in the main content area, adding necessary flex/min-width/overflow guards (e.g., main content min-w-0) to prevent the sidebar from overlapping or visually trapping content, and keeping the active nav state in sync with the rendered PageComponent."
         },
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Adjust startup flow to (1) only show a profile-load failure screen for true errors, (2) allow brand-new users (missing profile) to proceed to AppShell + ProfileSetupDialog, and (3) ensure Retry triggers the correct refetch sequence without getting stuck. Use the authorization component’s recommended `showProfileSetup` gating pattern; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/ProfileSetupDialog.tsx",
-          "operation": "modify",
-          "description": "Ensure profile setup remains the recovery path for first-time users by improving error messaging and aligning save failures with the same recoverable/retry posture used elsewhere (without adding new features). Use the authorization component’s user profile setup expectations; verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add a visible Contact Us action in the authenticated shell that opens an email draft to wholesalensrealestate@gmail.com via mailto.",
-      "acceptanceCriteria": [
-        "A \"Contact Us\" action is accessible from the main authenticated UI (e.g., in the sidebar/footer area).",
-        "Clicking \"Contact Us\" opens a new email draft addressed to wholesalensrealestate@gmail.com using a mailto link.",
-        "User-facing text is in English and matches the app’s existing styling."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/support.ts",
+          "path": "frontend/src/components/AppShellErrorBoundary.tsx",
           "operation": "create",
-          "description": "Create a small support helper that centralizes the support email address (wholesalensrealestate@gmail.com) and provides a safe mailto builder/open helper for reuse across the shell and startup error states."
+          "description": "Add a small React error boundary component that can wrap the main content renderer so that if any page throws during render, a user-facing fallback is shown instead of a blank or broken main pane."
         },
         {
           "path": "frontend/src/components/AppShell.tsx",
           "operation": "modify",
-          "description": "Add a clearly visible \"Contact Us\" action to the authenticated UI (e.g., in the sidebar footer near logout) that triggers a mailto draft to wholesalensrealestate@gmail.com using the shared support helper."
-        },
-        {
-          "path": "frontend/src/lib/copy.ts",
-          "operation": "modify",
-          "description": "Add English copy strings for support/contact actions (e.g., \"Contact Us\", \"Email Support\") so the new UI text is consistent with existing centralized copy usage."
+          "description": "Wrap the lazy-loaded PageComponent render with the new AppShellErrorBoundary to prevent unhandled exceptions from causing a blank main content area during navigation."
         }
       ]
     },
     {
-      "id": "REQ-3",
-      "summary": "Add clear recovery paths when startup initialization/profile fetch fails, including Contact Us support access and preventing infinite loading states.",
+      "id": "REQ-6",
+      "summary": "Make the sidebar responsive with a mobile drawer that can open/close and auto-closes on navigation without breaking the desktop persistent sidebar layout.",
       "acceptanceCriteria": [
-        "Startup error screens provide a clear Retry action (existing) and also provide an obvious way to contact support (wholesalensrealestate@gmail.com) when issues persist.",
-        "No infinite loading state occurs during startup; the user either proceeds into the app, sees profile setup, or gets a recoverable error screen with Retry and Contact Us."
+        "On small screens, the navigation can be toggled open and closed, and the main content remains accessible.",
+        "When a user selects a navigation item on small screens, the navigation closes (or otherwise gets out of the way) and the chosen page content is visible.",
+        "The desktop layout keeps a persistent sidebar and does not regress."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/StartupErrorScreen.tsx",
+          "path": "frontend/src/components/AppShell.tsx",
           "operation": "modify",
-          "description": "Extend the startup error UI to include a secondary \"Contact Us\" action that opens a mailto draft to wholesalensrealestate@gmail.com (using the shared support helper), while keeping Retry prominent and consistent with existing styling."
+          "description": "Implement responsive sidebar behavior: keep the existing persistent sidebar for desktop widths, and add a mobile drawer/collapsible mode with a toggle button in a small-screen header; selecting a nav item should also close the drawer. Use shadcn-ui primitives already available in the project (e.g., Sheet/Drawer patterns if present) to implement the drawer behavior. Verify the component's usage instructions before implementing."
         },
+        {
+          "path": "frontend/src/hooks/useMediaQuery.ts",
+          "operation": "create",
+          "description": "Add a lightweight media-query hook to reliably detect small screens for toggling drawer behavior and for auto-close rules after navigation."
+        },
+        {
+          "path": "frontend/src/components/AppShell.tsx",
+          "operation": "modify",
+          "description": "Wire the new useMediaQuery hook into the AppShell so the sidebar toggle UI and auto-close behavior only apply on small screens while preserving the desktop persistent sidebar layout."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Eliminate runtime/UI errors during authenticated shell usage and page switching, including fixing broken routes and adding safe fallbacks for page-load failures.",
+      "acceptanceCriteria": [
+        "Basic authenticated flow works end-to-end: sign in, land in the app shell, switch pages from the navigation, and interact with scrollable content without crashes.",
+        "No navigation action results in a blank main pane due to an unhandled exception.",
+        "Any existing navigation-related console errors (errors thrown during render, click handlers, or lazy loading of pages) are eliminated or handled with a user-facing fallback state."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add a startup watchdog to avoid infinite loading by converting excessively long actor/profile loading into a recoverable StartupErrorScreen state with Retry + Contact Us. Ensure this applies to both actor initialization and profile fetch stages without changing other product behavior."
+          "description": "Fix the payment failure route check to match the actual failure page path (use '/payment-failure' rather than '/payment-cancel') so authenticated navigation to payment result pages does not silently fail or render the wrong screen."
         },
         {
-          "path": "frontend/src/components/PageQueryErrorState.tsx",
-          "operation": "modify",
-          "description": "Align generic data-load error presentation with the new support pathway by making it easy for pages to expose a consistent \"Contact Us\" secondary action (using the shared support helper) when appropriate."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Polish authenticated shell and startup screens with a cohesive warm real-estate/ledger theme (typography, spacing, consistent buttons) without adding new features.",
-      "acceptanceCriteria": [
-        "Visual styling updates are consistent across the sidebar, primary buttons, and startup screens.",
-        "Theme uses a coherent palette and typography treatment (do not introduce blue/purple as primary styling unless already present).",
-        "No functional behavior changes are introduced beyond UI polish."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/StartupLoadingScreen.tsx",
-          "operation": "modify",
-          "description": "Refine spacing/typography and loading composition to feel more launch-ready and consistent with the warm palette already defined in theme tokens (no behavior changes)."
-        },
-        {
-          "path": "frontend/src/components/StartupErrorScreen.tsx",
-          "operation": "modify",
-          "description": "Apply cohesive visual polish (typography scale, spacing, card-like framing consistent with the app) while preserving existing Retry behavior and adding only the support link required by REQ-3."
+          "path": "frontend/src/components/AppShellErrorBoundary.tsx",
+          "operation": "create",
+          "description": "Ensure the error boundary fallback UI provides an actionable recovery path (e.g., a button to return to Dashboard) and does not throw additional errors; keep all user-facing text in English."
         },
         {
           "path": "frontend/src/components/AppShell.tsx",
           "operation": "modify",
-          "description": "Polish sidebar/nav spacing and button consistency (hover/active states, borders, typography) to reinforce the existing warm theme while keeping current navigation behavior unchanged."
-        },
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Apply small global typography/rendering polish (e.g., font smoothing, consistent base text rhythm) using existing theme tokens and avoiding new primary hues."
+          "description": "Harden page switching by adding a defensive fallback when the selected PageComponent is missing/undefined and by ensuring Suspense fallback and error boundary cover lazy-load failures, preventing blank main pane and blocking console errors during repeated navigation."
         }
       ]
     }

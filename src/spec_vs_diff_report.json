@@ -1,43 +1,41 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T20:04:50.292Z",
-  "summary": "Most frontend requirements (Contact Us via mailto, startup recovery paths, and theme polish) appear implemented. However, the core backend-side fix for first-time profile initialization is not evidenced in the provided backend diff excerpt, and there is an unrequested/forbidden-looking change related to membership pricing.",
+  "generatedAt": "2026-02-16T20:11:05.766Z",
+  "summary": "Diff implements responsive sidebar behavior (mobile drawer + auto-close on nav) and adds an app-shell error boundary plus lazy-loaded page rendering logic. One explicit gap is that the Admin Panel navigation item is not evidenced in the sidebar nav list, despite being required. Diff also includes additional routing/startup watchdog changes not explicitly requested by the BuildRequest.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Fix the startup error by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users with no existing profile yet, and avoid backend traps/throws that block getCallerUserProfile / saving profile.",
-      "reason": "The frontend hooks assume the backend now \"auto-initializes profiles\" and returns an empty profile for new users, but the backend diff excerpt is truncated and does not show any implementation of getCallerUserProfile/saveCallerUserProfile changes, profile initialization logic, or access-control adjustments to prevent traps for first-time users.",
+      "id": "REQ-5",
+      "requirement": "Sidebar must include and support navigation to Admin Panel (along with Dashboard, Deal Analyzer, Deals Pipeline, Buyers List, Contracts, Analytics, Membership) such that clicking it updates active state and renders the correct page in the main content.",
+      "reason": "The modified AppShell navItems list shown includes dashboard/analyzer/pipeline/buyers/contracts/analytics/membership but does not show an Admin Panel item, so there is no evidence that Admin Panel can be selected from the sidebar as required.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/hooks/useQueries.ts (comment: \"Backend now auto-initializes profiles\")"
+        "frontend/src/components/AppShell.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Membership pricing changes (e.g., new monthly prices Basic $6.99, Pro $19.99, Enterprise $59.99).",
-      "reason": "BuildRequest non-goals explicitly prohibit changing membership pricing beyond what is required to fix profile loading; the diff shows an explicit note indicating new prices, which is unrelated to the requested profile-load/contact-us/reliability/theme work.",
+      "description": "Payment result route handling (/payment-success and /payment-failure) in App.tsx with additional loading states",
+      "reason": "BuildRequest focuses on fixing sidebar navigation responsiveness and eliminating navigation/runtime UI errors; payment-result route handling is not mentioned and may be new functionality outside the requested scope.",
       "evidence": [
-        "backend/main.mo (comment: \"// NEW MONTHLY PRICES: Basic: $6.99, Pro: $19.99, Enterprise: $59.99\")"
+        "frontend/src/App.tsx"
+      ]
+    },
+    {
+      "description": "Startup timeout watchdog (30s) and related retry/error UX in App.tsx",
+      "reason": "Not explicitly requested in REQ-5/6/7; while it may improve robustness, it is additional behavior beyond the specified navigation/sidebar fixes.",
+      "evidence": [
+        "frontend/src/App.tsx"
       ]
     }
   ],
-  "confidence": 0.68,
+  "confidence": 0.63,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
     "frontend/src/components/AppShell.tsx",
-    "frontend/src/components/PageQueryErrorState.tsx",
-    "frontend/src/components/ProfileSetupDialog.tsx",
-    "frontend/src/components/StartupErrorScreen.tsx",
-    "frontend/src/components/StartupLoadingScreen.tsx",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/index.css",
-    "frontend/src/lib/copy.ts",
-    "frontend/src/lib/support.ts",
-    "frontend/src/pages/MembershipPage.tsx",
+    "frontend/src/components/AppShellErrorBoundary.tsx",
+    "frontend/src/hooks/useMediaQuery.ts",
     "project_state.json"
   ]
 }

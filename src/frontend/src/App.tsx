@@ -55,7 +55,7 @@ export default function App() {
 
   // Check if we're on a payment result page
   const isPaymentSuccessPage = currentPath === '/payment-success';
-  const isPaymentCancelPage = currentPath === '/payment-cancel';
+  const isPaymentFailurePage = currentPath === '/payment-failure';
 
   // Show loading screen during identity initialization
   if (identityInitializing) {
@@ -100,7 +100,7 @@ export default function App() {
   }
 
   // Handle payment result pages (must be authenticated and actor ready)
-  if (isPaymentSuccessPage || isPaymentCancelPage) {
+  if (isPaymentSuccessPage || isPaymentFailurePage) {
     // Wait for actor to be ready before showing payment pages
     if (!actorReady) {
       return <StartupLoadingScreen message="Loading payment status..." />;
@@ -110,7 +110,7 @@ export default function App() {
       return <PaymentSuccessPage />;
     }
     
-    if (isPaymentCancelPage) {
+    if (isPaymentFailurePage) {
       return <PaymentFailurePage />;
     }
   }
