@@ -1,87 +1,40 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T18:51:35.243Z",
-  "summary": "Diff adds a membership catalog type/state (with migration), new frontend Admin Panel page and hooks, and updates MembershipPage to fetch pricing from backend with fallback + error toast. However, several backend requirements and specific pricing defaults are not evidenced in the provided diff summary, and backend default prices shown do not match the requested UI defaults.",
+  "generatedAt": "2026-02-16T19:10:28.600Z",
+  "summary": "REQ-3 and REQ-4 appear implemented in MembershipPage (new fallback prices and all plans shown as monthly). Backend default prices were updated to the new values and upgrade migration logic was added, but the change set appears to violate the stated constraint that all backend logic must remain in backend/main.mo by introducing backend/migration.mo; additionally, due to truncation, some REQ-1 details (e.g., lastUpdated and enterprise salePriceCents field) cannot be fully verified from the provided snippet.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Backend public (non-admin) query endpoint that returns the membership catalog, with sensible defaults matching current UI values (Basic $15/month, Pro $20/month, Enterprise $90/year) when not configured.",
-      "reason": "While backend types/state for `membershipCatalog` are shown, the diff summary does not show a public query method implementation. Additionally, the defaults shown in backend state and migration do not match the required $15/$20/$90 values.",
+      "requirement": "Keep sale fields disabled by default (isOnSale=false, salePriceCents=null) and update lastUpdated accordingly in the default backend membershipCatalog.",
+      "reason": "The backend/main.mo snippet is truncated mid-way through the enterprise pricing object (shows `isOnSale = false; s...`), and the `lastUpdated` field for the default catalog is not visible, so it cannot be confirmed from the diff summary that enterprise.salePriceCents is null and that lastUpdated is set/updated.",
       "evidence": [
-        "backend/main.mo",
-        "backend/migration.mo"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Backend admin-only endpoints to update membership catalog pricing and sale settings (enable/disable sale and set sale price), using existing AccessControl/authorization and persisting updates.",
-      "reason": "The frontend introduces `useUpdateMembershipPricing`, but the diff summary for `backend/main.mo` is truncated and does not show any corresponding admin-only update endpoint or explicit authorization checks/traps using the existing AccessControl system.",
-      "evidence": [
-        "backend/main.mo",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminPanelPage.tsx"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Backend admin-only endpoint to grant/revoke/downgrade a user's membership tier by specifying the user's Principal and desired tier, reflected in getCallerUserProfile and gating checks.",
-      "reason": "The frontend introduces `useUpdateMembershipTier` and an Admin Panel grant form, but the diff summary does not show the backend endpoint that updates another user's membership tier with admin authorization/trap behavior. It also does not show that `getCallerUserProfile` and gating logic are updated to respect admin-granted tiers (may already exist, but not evidenced here).",
-      "evidence": [
-        "backend/main.mo",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminPanelPage.tsx"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Admin Panel page must be accessible only to admins via navigation entry and route/state; non-admins see access denied or are redirected; includes catalog edit+save calling backend and grant membership form; English text and errors via existing toast patterns.",
-      "reason": "AdminPanelPage exists and shows an access denied screen when `!isAdmin`, but the diff summary is truncated before showing the full catalog editing UI and save/grant sections, so full AC coverage (all editable fields per tier and save action wired) is not fully evidenced.",
-      "evidence": [
-        "frontend/src/pages/AdminPanelPage.tsx",
-        "frontend/src/components/AccessDeniedScreen.tsx",
-        "frontend/src/lib/copy.ts",
-        "frontend/src/components/AppShell.tsx"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Membership Plans page displays sale pricing clearly (original struck through and sale emphasized) when a tier is on sale.",
-      "reason": "MembershipPage adds logic to compute regular vs sale price, but the diff summary is truncated before the render section that would show struck-through original price and emphasized sale price. Thus the visual sale presentation is not evidenced.",
-      "evidence": [
-        "frontend/src/pages/MembershipPage.tsx"
+        "backend/main.mo (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Introduced a backend state migration module to add `membershipCatalog` to actor state with new default pricing values.",
-      "reason": "The BuildRequest did not request a migration system/module or a state-migration file; it only constrained backend to remain a single Motoko actor in `backend/main.mo` and requested catalog + admin endpoints.",
+      "description": "Introduced a separate backend migration module file (backend/migration.mo) and wired it into backend/main.mo via `(with migration = Migration.run)`, which adds backend logic outside backend/main.mo.",
+      "reason": "BuildRequest constraint states: \"Backend must remain a single Motoko actor (all logic in backend/main.mo).\" Adding backend/migration.mo places logic outside main.mo, even if it supports REQ-2.",
       "evidence": [
         "backend/migration.mo",
         "backend/main.mo"
       ]
     },
     {
-      "description": "Backend membership catalog defaults use $29.99/$89.99/$299.99 style values rather than the requested Basic $15/month, Pro $20/month, Enterprise $90/year defaults.",
-      "reason": "These specific defaults contradict the BuildRequest acceptance criteria for sensible defaults matching current UI values.",
+      "description": "Added UI behavior for catalog fetch failure: a non-blocking error toast shown only once (useEffect + ref) with a specific message.",
+      "reason": "REQ-3 only asked to update fallback pricing values; it did not request new toast/error-notification behavior.",
       "evidence": [
-        "backend/main.mo",
-        "backend/migration.mo"
+        "frontend/src/pages/MembershipPage.tsx"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.66,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/AccessDeniedScreen.tsx",
-    "frontend/src/components/AppShell.tsx",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/copy.ts",
-    "frontend/src/lib/money.ts",
-    "frontend/src/pages/AdminPanelPage.tsx",
     "frontend/src/pages/MembershipPage.tsx",
     "project_state.json"
   ]

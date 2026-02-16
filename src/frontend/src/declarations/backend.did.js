@@ -207,7 +207,11 @@ export const idlService = IDL.Service({
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getContract' : IDL.Func([IDL.Nat], [IDL.Opt(ContractDocument)], ['query']),
   'getDeal' : IDL.Func([IDL.Nat], [IDL.Opt(Deal)], ['query']),
-  'getMembershipCatalog' : IDL.Func([], [MembershipCatalog], ['query']),
+  'getMembershipCatalog' : IDL.Func(
+      [],
+      [IDL.Opt(MembershipCatalog)],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -496,7 +500,11 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getContract' : IDL.Func([IDL.Nat], [IDL.Opt(ContractDocument)], ['query']),
     'getDeal' : IDL.Func([IDL.Nat], [IDL.Opt(Deal)], ['query']),
-    'getMembershipCatalog' : IDL.Func([], [MembershipCatalog], ['query']),
+    'getMembershipCatalog' : IDL.Func(
+        [],
+        [IDL.Opt(MembershipCatalog)],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],

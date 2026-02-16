@@ -156,20 +156,20 @@ actor {
   // Membership catalog state
   var membershipCatalog : MembershipCatalog = {
     basic = {
-      monthlyPriceCents = 2999;
-      annualPriceCents = 29999;
+      monthlyPriceCents = 499;
+      annualPriceCents = 4999;
       isOnSale = false;
       salePriceCents = null;
     };
     pro = {
-      monthlyPriceCents = 8999;
-      annualPriceCents = 89999;
+      monthlyPriceCents = 1499;
+      annualPriceCents = 14999;
       isOnSale = false;
       salePriceCents = null;
     };
     enterprise = {
-      monthlyPriceCents = 29999;
-      annualPriceCents = 299999;
+      monthlyPriceCents = 3999;
+      annualPriceCents = 39999;
       isOnSale = false;
       salePriceCents = null;
     };
@@ -223,10 +223,16 @@ actor {
 
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view profiles");
+    };
     userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view profiles");
+    };
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
@@ -234,6 +240,9 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
     userProfiles.add(caller, profile);
   };
 
@@ -798,6 +807,23 @@ actor {
     sellerName : Text,
     sellerPhone : Text,
   ) : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create deals");
+    };
+
+    // Check Basic tier limit (15 active deals)
+    switch (userProfiles.get(caller)) {
+      case (null) { Runtime.trap("User profile not found") };
+      case (?profile) {
+        if (profile.membershipTier == #Basic) {
+          let activeCount = countActiveDeals(caller);
+          if (activeCount >= 15) {
+            Runtime.trap("Basic tier limited to 15 active deals. Upgrade to Pro or Enterprise.");
+          };
+        };
+      };
+    };
+
     let dealId = nextDealId;
     let now = Time.now();
     let deal : Deal = {
@@ -825,8 +851,9 @@ actor {
   };
 
   // Public query for frontend to get current membership catalog
-  public query ({ caller }) func getMembershipCatalog() : async MembershipCatalog {
-    membershipCatalog;
+  // This is accessible to all users including guests to allow browsing pricing
+  public query ({ caller }) func getMembershipCatalog() : async ?MembershipCatalog {
+    ?membershipCatalog;
   };
 
   // Admin operation to update membership pricing

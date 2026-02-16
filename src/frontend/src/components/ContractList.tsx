@@ -1,7 +1,8 @@
 import { useGetContractsByDeal } from '../hooks/useQueries';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Download } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FileText, Download, AlertCircle, Loader2 } from 'lucide-react';
 import { Variant_PurchaseContract_AssignmentContract } from '../backend';
 
 interface ContractListProps {
@@ -9,14 +10,33 @@ interface ContractListProps {
 }
 
 export default function ContractList({ dealId }: ContractListProps) {
-  const { data: contracts = [], isLoading } = useGetContractsByDeal(dealId);
+  const { data: contracts = [], isLoading, isError, error, refetch } = useGetContractsByDeal(dealId);
 
   if (isLoading) {
     return (
-      <div className="text-center py-4">
-        <div className="mb-2 h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
+      <div className="text-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
         <p className="text-sm text-muted-foreground">Loading contracts...</p>
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="flex items-center justify-between">
+          <span>{(error as Error)?.message || 'Failed to load contracts'}</span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => refetch()}
+            className="ml-4"
+          >
+            Retry
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -67,4 +87,3 @@ export default function ContractList({ dealId }: ContractListProps) {
     </div>
   );
 }
-

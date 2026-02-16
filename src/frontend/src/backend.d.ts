@@ -148,7 +148,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getContract(contractId: bigint): Promise<ContractDocument | null>;
     getDeal(dealId: bigint): Promise<Deal | null>;
-    getMembershipCatalog(): Promise<MembershipCatalog>;
+    getMembershipCatalog(): Promise<MembershipCatalog | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listBuyers(): Promise<Array<Buyer>>;

@@ -1,24 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project to add a membership system with an admin panel for managing paid/free memberships and sales.",
+  "summary": "New project",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-create-a-new-admin-panel-page-in-the-frontend-that-is-visible-accessible-only-to-admins-and-provides-ui-to-a-manage-membership-catalog-pricing-sale-settings-and-b-grant-free-memberships-to-a-user-by-entering-their-principal-and-selecting-a-tier",
-      "title": "Create a new Admin Panel page in the frontend that is visible/accessible only to admins and provides UI to (a) manage membership catalog pricing/sale settings and (b) grant free memberships to a user by entering their Principal and selecting a tier.",
+      "id": "feature-update-the-frontend-membership-pricing-fallbacks-to-match-the-new-backend-defaults-so-the-ui-shows-the-new-lower-prices-whenever-catalog-loading-fails-update-fallback-pricing-in-membershippage",
+      "title": "Update the frontend membership pricing fallbacks to match the new backend defaults so the UI shows the new lower prices whenever catalog loading fails (update FALLBACK_PRICING in MembershipPage).",
       "reqIds": [
-        "REQ-4"
+        "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-membership-plans-page-to-load-plan-prices-and-sale-state-from-the-backend-membership-catalog-instead-of-using-hard-coded-prices-and-display-sale-pricing-clearly-when-a-tier-is-on-sale",
-      "title": "Update the Membership Plans page to load plan prices (and sale state) from the backend membership catalog instead of using hard-coded prices, and display sale pricing clearly when a tier is on sale.",
+      "id": "feature-update-the-membership-page-to-show-monthly-pricing-for-all-plans-including-enterprise-so-the-displayed-period-is-always-per-month",
+      "title": "Update the Membership page to show monthly pricing for all plans (including Enterprise) so the displayed period is always per month.",
       "reqIds": [
-        "REQ-5"
+        "REQ-4"
       ],
       "version": 1
     }
@@ -26,42 +26,28 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Set up memberships (paid/free)",
+      "summary": "Lower membership pricing; keep monthly pricing option",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Admin panel to manage memberships, run sales, and grant free memberships",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Add backend support for an admin-managed membership catalog that defines the public pricing and sale status for each membership tier (Basic/Pro/Enterprise), and expose a query endpoint for the frontend to read the current catalog.",
+      "summary": "Update the backend default membership catalog pricing to be significantly lower than the current defaults, using these new values (in cents): Basic monthly=499, annual=4999; Pro monthly=1499, annual=14999; Enterprise monthly=3999, annual=39999. Keep sale fields disabled by default (isOnSale=false, salePriceCents=null) and update lastUpdated accordingly.",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
     },
     {
-      "id": "AR-4",
-      "summary": "Add backend admin endpoints to update membership catalog pricing and put memberships on sale (enable/disable sale and set sale price) with access restricted to canister admins.",
+      "id": "AR-3",
+      "summary": "Ensure existing deployments also get the new lower defaults on upgrade by adding upgrade logic that conditionally rewrites the stored membershipCatalog only when it still matches the previous default values (Basic 2999/29999, Pro 8999/89999, Enterprise 29999/299999). Do not overwrite pricing if an admin has already customized it.",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Add backend admin functionality to grant (and revoke/downgrade) memberships for users without payment by setting a user's membership tier as an admin operation.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "status": "pending"
     }
   ],
-  "projectName": "Wholesale Lens",
+  "projectName": "Deal Memberships",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

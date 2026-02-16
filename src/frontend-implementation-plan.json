@@ -1,68 +1,34 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Wholesale Lens — Admin Panel + Dynamic Membership Catalog UI",
+  "title": "Update membership page fallback pricing and enforce monthly display across plans",
   "requirements": [
     {
-      "id": "REQ-4",
-      "summary": "Add an admin-only Admin Panel page to manage membership catalog pricing/sales and grant free memberships by Principal.",
+      "id": "REQ-3",
+      "summary": "Align Membership page fallback pricing with new lower backend defaults so UI shows correct prices when catalog load fails.",
       "acceptanceCriteria": [
-        "A new navigation entry and route exist for an Admin Panel page; non-admin users cannot access the page (they see an access denied state or are redirected away).",
-        "Admin Panel includes a Membership Catalog section with editable fields per tier (price, period, sale on/off, sale price) and a Save action that calls the admin backend endpoint.",
-        "Admin Panel includes a Grant Membership section where the admin inputs a user's Principal and selects a tier, then submits to grant/update that user's membership tier.",
-        "All user-facing text on this page is in English and errors are surfaced via existing toast/error patterns."
+        "When membership catalog fetch fails, the Membership page displays Basic $4.99/month, Pro $14.99/month, Enterprise $39.99/month using fallback pricing."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/pages/MembershipPage.tsx",
           "operation": "modify",
-          "description": "Add React Query hooks/mutations needed by the Admin Panel: query current admin status using backendInterface.isCallerAdmin() and add mutations for backendInterface.updateMembershipPricing(...) and backendInterface.updateMembershipTier(...). Use the existing authorization component patterns for handling authorization errors from backend traps gracefully in the UI; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/AccessDeniedScreen.tsx",
-          "operation": "create",
-          "description": "Create a reusable AccessDeniedScreen component (English copy) that matches existing styling patterns (compose existing shadcn/ui components such as Card/Button) and can be used by admin-gated views. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/AdminPanelPage.tsx",
-          "operation": "create",
-          "description": "Implement the Admin Panel page UI: (1) Membership Catalog editor for Basic/Pro/Enterprise (price, billing period choice, sale toggle, sale price) prefilled from getMembershipCatalog; (2) Save action calling updateMembershipPricing; (3) Grant Membership form that parses a provided Principal text and calls updateMembershipTier; (4) Admin-only guard that shows AccessDeniedScreen (or navigates away) when not an admin; (5) Use existing toast patterns (sonner) for success/errors. Use authorization component guidance for admin-only UI gating and error handling; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/AppShell.tsx",
-          "operation": "modify",
-          "description": "Wire the Admin Panel into the app shell: extend the internal Page union, lazy-load AdminPanelPage, add a navigation entry that is only visible when the current caller is an admin (using the new admin-status hook), and ensure non-admins cannot render the admin page even if they attempt to navigate to it. Use authorization component guidance for admin-only UI gating; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/lib/copy.ts",
-          "operation": "modify",
-          "description": "Add English UI copy strings for the Admin Panel nav label, section headings, and access denied messaging (reused by AccessDeniedScreen/AdminPanelPage) consistent with existing COPY structure."
+          "description": "Update FALLBACK_PRICING to match the new backend defaults (in cents as bigint): Basic monthlyPriceCents=499n annualPriceCents=4999n; Pro monthlyPriceCents=1499n annualPriceCents=14999n; Enterprise monthlyPriceCents=3999n annualPriceCents=39999n. Keep sale fields disabled in fallbacks (isOnSale=false, salePriceCents=undefined) so the fallback UI matches the default non-sale behavior."
         }
       ]
     },
     {
-      "id": "REQ-5",
-      "summary": "Load membership plan pricing and sale state from the backend catalog and render sale pricing with a robust fallback.",
+      "id": "REQ-4",
+      "summary": "Show monthly pricing period label for all membership plans, including Enterprise.",
       "acceptanceCriteria": [
-        "MembershipPage reads membership pricing from a backend query and uses it to render each plan's price/period.",
-        "When a tier is on sale, the UI displays both the original price and the sale price (e.g., original struck through and sale emphasized).",
-        "If the backend catalog query fails, the UI falls back to the current hard-coded plan values and shows a non-blocking error message."
+        "Enterprise plan card shows pricing with period label \"/ month\" (not \"/ year\").",
+        "Basic and Pro plan cards continue to show pricing with period label \"/ month\"."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a React Query hook for fetching the membership catalog via backendInterface.getMembershipCatalog() with appropriate enabled conditions based on actor readiness and a non-blocking error handling strategy (to support UI fallback). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/lib/money.ts",
-          "operation": "create",
-          "description": "Add small formatting helpers for displaying bigint cent amounts as USD strings (e.g., cents -> \"$15\") and for selecting the display amount based on billing period, to keep MembershipPage/AdminPanelPage logic readable."
-        },
-        {
           "path": "frontend/src/pages/MembershipPage.tsx",
           "operation": "modify",
-          "description": "Replace hard-coded plan price rendering with values loaded from the backend membership catalog hook; clearly render sale state per tier (original price visually de-emphasized/struck through + sale price emphasized) and preserve the current plan feature list. On catalog query failure, fall back to the current hard-coded values (Basic $15/month, Pro $20/month, Enterprise $90/year) and show a non-blocking toast error."
+          "description": "Adjust the Membership page plan configuration so Enterprise uses monthly pricing display (set Enterprise plan period to 'monthly' like Basic and Pro). Ensure the rendered period label remains \"month\" for all plan cards by using the existing getPriceDisplay(period='monthly') flow."
         }
       ]
     }

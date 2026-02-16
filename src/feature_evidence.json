@@ -2,35 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-create-a-new-admin-panel-page-in-the-frontend-that-is-visible-accessible-only-to-admins-and-provides-ui-to-a-manage-membership-catalog-pricing-sale-settings-and-b-grant-free-memberships-to-a-user-by-entering-their-principal-and-selecting-a-tier",
-      "featureTitle": "Create a new Admin Panel page in the frontend that is visible/accessible only to admins and provides UI to (a) manage membership catalog pricing/sale settings and (b) grant free memberships to a user by entering their Principal and selecting a tier.",
+      "featureId": "feature-update-the-frontend-membership-pricing-fallbacks-to-match-the-new-backend-defaults-so-the-ui-shows-the-new-lower-prices-whenever-catalog-loading-fails-update-fallback-pricing-in-membershippage",
+      "featureTitle": "Update the frontend membership pricing fallbacks to match the new backend defaults so the UI shows the new lower prices whenever catalog loading fails (update FALLBACK_PRICING in MembershipPage).",
       "files": [
-        "frontend/src/components/AccessDeniedScreen.tsx",
-        "frontend/src/components/AppShell.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/lib/copy.ts",
-        "frontend/src/pages/AdminPanelPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-membership-plans-page-to-load-plan-prices-and-sale-state-from-the-backend-membership-catalog-instead-of-using-hard-coded-prices-and-display-sale-pricing-clearly-when-a-tier-is-on-sale",
-      "featureTitle": "Update the Membership Plans page to load plan prices (and sale state) from the backend membership catalog instead of using hard-coded prices, and display sale pricing clearly when a tier is on sale.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/lib/money.ts",
         "frontend/src/pages/MembershipPage.tsx"
       ],
       "components": [
@@ -43,7 +17,27 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-5"
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-membership-page-to-show-monthly-pricing-for-all-plans-including-enterprise-so-the-displayed-period-is-always-per-month",
+      "featureTitle": "Update the Membership page to show monthly pricing for all plans (including Enterprise) so the displayed period is always per month.",
+      "files": [
+        "frontend/src/pages/MembershipPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

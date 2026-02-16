@@ -166,7 +166,7 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getContract' : ActorMethod<[bigint], [] | [ContractDocument]>,
   'getDeal' : ActorMethod<[bigint], [] | [Deal]>,
-  'getMembershipCatalog' : ActorMethod<[], MembershipCatalog>,
+  'getMembershipCatalog' : ActorMethod<[], [] | [MembershipCatalog]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listBuyers' : ActorMethod<[], Array<Buyer>>,

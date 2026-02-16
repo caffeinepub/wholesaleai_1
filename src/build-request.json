@@ -1,114 +1,97 @@
 {
   "kind": "build_request",
-  "title": "Admin-managed memberships with sales and free grants",
-  "projectName": "Wholesale Lens",
+  "title": "Lower membership prices and use monthly pricing across plans",
+  "projectName": "Deal Memberships",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add backend support for an admin-managed membership catalog that defines the public pricing and sale status for each membership tier (Basic/Pro/Enterprise), and expose a query endpoint for the frontend to read the current catalog.",
+      "text": "Update the backend default membership catalog pricing to be significantly lower than the current defaults, using these new values (in cents): Basic monthly=499, annual=4999; Pro monthly=1499, annual=14999; Enterprise monthly=3999, annual=39999. Keep sale fields disabled by default (isOnSale=false, salePriceCents=null) and update lastUpdated accordingly.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Lets set up memberships And make me a admin panel so I can put memberships on sale and give free ones"
+          "Change the prices to memberships way lower thanks monthly is fine I think"
         ]
       },
       "acceptanceCriteria": [
-        "Backend stores membership catalog data (price + billing period + optional sale price/flag) per tier.",
-        "A public (non-admin) query returns the membership catalog for use by the Membership Plans page.",
-        "If no catalog has been configured yet, the backend returns sensible defaults matching the current UI values (Basic $15/month, Pro $20/month, Enterprise $90/year) so existing behavior does not break."
+        "A fresh canister install initializes membershipCatalog with Basic $4.99/mo ($49.99/yr), Pro $14.99/mo ($149.99/yr), Enterprise $39.99/mo ($399.99/yr).",
+        "Sale pricing remains disabled by default for all tiers (isOnSale=false, salePriceCents=null)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add backend admin endpoints to update membership catalog pricing and put memberships on sale (enable/disable sale and set sale price) with access restricted to canister admins.",
+      "text": "Ensure existing deployments also get the new lower defaults on upgrade by adding upgrade logic that conditionally rewrites the stored membershipCatalog only when it still matches the previous default values (Basic 2999/29999, Pro 8999/89999, Enterprise 29999/299999). Do not overwrite pricing if an admin has already customized it.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "make me a admin panel so I can put memberships on sale"
+          "Change the prices to memberships way lower thanks monthly is fine I think"
         ]
       },
       "acceptanceCriteria": [
-        "Only principals recognized as admins by the existing AccessControl/authorization system can update the membership catalog; non-admin calls trap with an authorization error.",
-        "Admin can set regular price and billing period, and can enable/disable a sale and set a sale price for a tier.",
-        "Updates persist and are reflected immediately when the public catalog query is called."
+        "After upgrade, if (and only if) the stored catalog matches the previous default prices, the catalog is updated to the new lower defaults.",
+        "After upgrade, if the stored catalog differs from the previous defaults (indicating admin customization), the catalog remains unchanged."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add backend admin functionality to grant (and revoke/downgrade) memberships for users without payment by setting a user's membership tier as an admin operation.",
-      "target": "backend",
+      "text": "Update the frontend membership pricing fallbacks to match the new backend defaults so the UI shows the new lower prices whenever catalog loading fails (update FALLBACK_PRICING in MembershipPage).",
+      "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "give free ones"
+          "Change the prices to memberships way lower thanks monthly is fine I think"
         ]
       },
       "acceptanceCriteria": [
-        "Only admins can change another user's membership tier; non-admin calls trap with an authorization error.",
-        "Admin can set a target user's membership tier by specifying the user's Principal and the desired tier.",
-        "After an admin grants a tier, the affected user sees the updated tier via getCallerUserProfile and gated features (Pro/Enterprise checks) respect the new tier."
+        "When membership catalog fetch fails, the Membership page displays Basic $4.99/month, Pro $14.99/month, Enterprise $39.99/month using fallback pricing."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Create a new Admin Panel page in the frontend that is visible/accessible only to admins and provides UI to (a) manage membership catalog pricing/sale settings and (b) grant free memberships to a user by entering their Principal and selecting a tier.",
+      "text": "Update the Membership page to show monthly pricing for all plans (including Enterprise) so the displayed period is always per month.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "make me a admin panel so I can put memberships on sale and give free ones"
+          "monthly is fine I think"
         ]
       },
       "acceptanceCriteria": [
-        "A new navigation entry and route exist for an Admin Panel page; non-admin users cannot access the page (they see an access denied state or are redirected away).",
-        "Admin Panel includes a Membership Catalog section with editable fields per tier (price, period, sale on/off, sale price) and a Save action that calls the admin backend endpoint.",
-        "Admin Panel includes a Grant Membership section where the admin inputs a user's Principal and selects a tier, then submits to grant/update that user's membership tier.",
-        "All user-facing text on this page is in English and errors are surfaced via existing toast/error patterns."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Update the Membership Plans page to load plan prices (and sale state) from the backend membership catalog instead of using hard-coded prices, and display sale pricing clearly when a tier is on sale.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "put memberships on sale"
-        ]
-      },
-      "acceptanceCriteria": [
-        "MembershipPage reads membership pricing from a backend query and uses it to render each plan's price/period.",
-        "When a tier is on sale, the UI displays both the original price and the sale price (e.g., original struck through and sale emphasized).",
-        "If the backend catalog query fails, the UI falls back to the current hard-coded plan values and shows a non-blocking error message."
+        "Enterprise plan card shows pricing with period label \"/ month\" (not \"/ year\").",
+        "Basic and Pro plan cards continue to show pricing with period label \"/ month\"."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo.",
-    "Do not edit files under frontend/src/components/ui or any other frontend immutablePaths listed in SYSTEM_CONTEXT; compose existing UI components instead.",
-    "Internet Identity remains the only authentication mechanism; admin authorization must use the existing AccessControl/authorization system already included in backend/main.mo.",
-    "No third-party payment processing integration is required/added (the current app already notes payments are not implemented)."
+    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
+    "Do not edit files under frontend/src/components/ui or other frontend immutablePaths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Implementing real payment checkout, subscriptions, invoicing, or Stripe integration.",
-    "Adding third-party auth providers beyond Internet Identity.",
-    "Building a full CRM-style user directory; the admin flow may rely on granting by Principal as input."
+    "Implementing real payment processing or checkout flows.",
+    "Adding new membership tiers or changing feature gating rules."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

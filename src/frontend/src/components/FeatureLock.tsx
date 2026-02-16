@@ -1,7 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
 
 interface FeatureLockProps {
   feature: string;
@@ -42,4 +41,3 @@ export default function FeatureLock({ feature, requiredTier, description }: Feat
     </div>
   );
 }
-

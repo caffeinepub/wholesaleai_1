@@ -61,10 +61,19 @@ export function useGetDeals() {
   return useQuery<Deal[]>({
     queryKey: ['deals'],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.listDeals();
+      if (!actor) throw new Error('Actor not available');
+      try {
+        return await actor.listDeals();
+      } catch (error: any) {
+        // Check if it's an authorization error
+        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
+          throw new Error('You do not have permission to view deals');
+        }
+        throw error;
+      }
     },
     enabled: !!actor && !isFetching,
+    retry: 1,
   });
 }
 
@@ -235,15 +244,19 @@ export function useGetBuyers() {
   return useQuery<Buyer[]>({
     queryKey: ['buyers'],
     queryFn: async () => {
-      if (!actor) return [];
+      if (!actor) throw new Error('Actor not available');
       try {
         return await actor.listBuyers();
-      } catch (error) {
-        console.error('Failed to fetch buyers:', error);
-        return [];
+      } catch (error: any) {
+        // Check if it's an authorization error
+        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
+          throw new Error('You do not have permission to view buyers');
+        }
+        throw error;
       }
     },
     enabled: !!actor && !isFetching,
+    retry: 1,
   });
 }
 
@@ -370,12 +383,16 @@ export function useGetContractsByDeal(dealId: bigint | null) {
       if (!actor || !dealId) return [];
       try {
         return await actor.listContractsByDeal(dealId);
-      } catch (error) {
-        console.error('Failed to fetch contracts:', error);
-        return [];
+      } catch (error: any) {
+        // Check if it's an authorization error
+        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
+          throw new Error('You do not have permission to view contracts');
+        }
+        throw error;
       }
     },
     enabled: !!actor && !isFetching && dealId !== null,
+    retry: 1,
   });
 }
 
@@ -443,12 +460,16 @@ export function useGetAnalytics() {
       if (!actor) throw new Error('Actor not available');
       try {
         return await actor.getAnalytics();
-      } catch (error) {
-        console.error('Failed to fetch analytics:', error);
+      } catch (error: any) {
+        // Check if it's an authorization error
+        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
+          throw new Error('You do not have permission to view analytics');
+        }
         throw error;
       }
     },
     enabled: !!actor && !isFetching,
+    retry: 1,
   });
 }
 
@@ -456,11 +477,16 @@ export function useGetAnalytics() {
 export function useGetMembershipCatalog() {
   const { actor, isFetching } = useBackendActor();
 
-  return useQuery<MembershipCatalog>({
+  return useQuery<MembershipCatalog | null>({
     queryKey: ['membershipCatalog'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getMembershipCatalog();
+      try {
+        return await actor.getMembershipCatalog();
+      } catch (error: any) {
+        console.error('Failed to fetch membership catalog:', error);
+        throw error;
+      }
     },
     enabled: !!actor && !isFetching,
     retry: 1,

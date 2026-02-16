@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense, useEffect } from 'react';
 import { Home, Sparkles, Layers, Users, FileText, BarChart3, CreditCard, Menu, X, LogOut, Settings } from 'lucide-react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
@@ -38,6 +38,19 @@ export default function AppShell({ userProfile }: AppShellProps) {
   const { clear } = useInternetIdentity();
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsCallerAdmin();
+
+  // Listen for navigation events from FeatureLock
+  useEffect(() => {
+    const handleNavigateToMembership = () => {
+      setCurrentPage('membership');
+      setSidebarOpen(false);
+    };
+
+    window.addEventListener('navigate-to-membership', handleNavigateToMembership);
+    return () => {
+      window.removeEventListener('navigate-to-membership', handleNavigateToMembership);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await clear();
@@ -184,9 +197,8 @@ export default function AppShell({ userProfile }: AppShellProps) {
             )}
             <Button
               onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
+              variant="ghost"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Logout
@@ -197,58 +209,32 @@ export default function AppShell({ userProfile }: AppShellProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6">
+        {/* Mobile header */}
+        <header className="lg:hidden flex items-center justify-between h-16 px-4 border-b border-border bg-card">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground"
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="flex items-center gap-3">
-            <img
-              src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
-              alt="Wholesale Lens"
-              className="h-6 hidden lg:block"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            {userProfile && (
-              <div className="text-sm text-right hidden sm:block">
-                <p className="font-medium">{userProfile.name}</p>
-                <p className="text-xs text-muted-foreground">{userProfile.membershipTier}</p>
-              </div>
-            )}
-          </div>
+          <img
+            src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
+            alt="Wholesale Lens"
+            className="h-8 w-8"
+          />
+          <div className="w-6" /> {/* Spacer for centering */}
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-6">
           {renderPage()}
         </main>
-
-        {/* Footer */}
-        <footer className="border-t border-border bg-card px-4 py-3">
-          <div className="flex items-center justify-center text-xs text-muted-foreground">
-            <span>© {new Date().getFullYear()} Built with ❤️ using </span>
-            <a
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.hostname : 'wholesale-lens'
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-1 hover:text-foreground transition-colors"
-            >
-              caffeine.ai
-            </a>
-          </div>
-        </footer>
       </div>
 
-      {/* Overlay for mobile */}
+      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
