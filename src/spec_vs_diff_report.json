@@ -1,57 +1,32 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T20:21:00.370Z",
-  "summary": "Diff implements a more resilient frontend startup state machine with timeout watchdog, error screen UI, and hash-based route parsing for payment result pages. However, evidence is insufficient that the backend authorization/profile APIs were adjusted to meet first-time authenticated user access (REQ-2), and some implemented product changes (e.g., membership pricing/sale-related behavior) appear outside the stated scope of “startup failures/unblock sign-in”.",
-  "missing_requirements": [
-    {
-      "id": "REQ-2",
-      "requirement": "Ensure authenticated users can successfully load their profile and use the app without requiring an admin token, including first-time users with no existing profile data.",
-      "reason": "Frontend now attempts to call backend methods like `getCallerUserProfile` and (on unauthorized) `initializeProfile`, but the diff provides no evidence that `backend/main.mo` was updated to (a) allow newly authenticated principals to call `getCallerUserProfile` without unauthorized errors or (b) implement/adjust `initializeProfile`/profile persistence behavior. The backend change is truncated and shows mostly type/model definitions, not the required authorization/profile function logic.",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/hooks/useQueries.ts"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "StartupErrorScreen displays an actionable, user-readable message derived from the underlying error (not just a generic fallback), while remaining safe (no secrets).",
-      "reason": "`normalizeError` mostly maps many failures to generic messages (e.g., 'An unexpected error occurred. Please try again.'), and `App.tsx` (truncated) shows generic actor connection failure text. The component can display a message, but the diff summary does not clearly show that underlying failure reasons (actor creation vs profile fetch vs routing) are surfaced in English beyond generic categories, as required.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/App.tsx (truncated)",
-        "frontend/src/components/StartupErrorScreen.tsx"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-16T21:07:31.596Z",
+  "summary": "Implemented profile-fetch hard timeout and added startup-stage diagnostics/error UI, plus updated App startup stage tracking and a 30s watchdog to avoid indefinite loading. Also includes unrelated changes to Membership checkout flow and URL/session parameter utilities not requested by the BuildRequest.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Membership pricing/catalog updates and sale support (e.g., new monthly prices, pricing catalog with sale fields) unrelated to startup/sign-in unblocking.",
-      "reason": "BuildRequest explicitly limits scope to fixing startup failures and unblocking first-time sign-in, and lists 'Adding new product features beyond making the app start and be usable' as a non-goal. The backend diff includes a comment announcing new monthly prices and introduces/extends membership catalog/pricing types; frontend summaries mention 'catalog pricing display with sale support' and billing period toggles, which are not requested by REQ-1..REQ-4.",
+      "description": "Changes to MembershipPage checkout flow (pricing selection, redirect handling, toggle for annual billing, Stripe session handling)",
+      "reason": "BuildRequest is focused on fixing infinite 'Loading your profile' startup state and explicitly lists redesigning unrelated pages (including membership) as a non-goal; these changes appear unrelated to the profile-loading hang.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend-file-summaries.txt"
+        "frontend/src/pages/MembershipPage.tsx"
       ]
     },
     {
-      "description": "Added/expanded support email/contact-support flows on startup error screen.",
-      "reason": "Not requested by REQ-1..REQ-4; REQ-3 only requires clear error message and reliable retry/recovery path. Adding 'Contact Support' is extra behavior beyond the specified acceptance criteria.",
+      "description": "Added/expanded URL parameter + sessionStorage utilities (route path parsing, persisted URL parameters, storing/removing session parameters) including comments about maintaining sensitive state",
+      "reason": "Not requested by any REQ-1..REQ-4; BuildRequest scope is startup/profile loading behavior. This looks like additional infrastructure beyond what was requested.",
       "evidence": [
-        "frontend/src/components/StartupErrorScreen.tsx"
+        "frontend/src/utils/urlParams.ts"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.66,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
-    "frontend/src/components/AppShell.tsx",
-    "frontend/src/components/ProfileSetupDialog.tsx",
     "frontend/src/components/StartupErrorScreen.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/PaymentFailurePage.tsx",
-    "frontend/src/pages/PaymentSuccessPage.tsx",
+    "frontend/src/pages/MembershipPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

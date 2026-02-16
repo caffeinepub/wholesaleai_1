@@ -18,8 +18,6 @@ import Storage "blob-storage/Storage";
 import Stripe "stripe/stripe";
 import OutCall "http-outcalls/outcall";
 
-// NEW MONTHLY PRICES: Basic: $6.99, Pro: $19.99, Enterprise: $59.99
-
 actor {
   include MixinStorage();
 
@@ -197,6 +195,11 @@ actor {
     lastUpdated = Time.now();
   };
 
+  // Helper: Check if caller is authenticated (not anonymous)
+  func isAuthenticated(caller : Principal) : Bool {
+    not caller.isAnonymous();
+  };
+
   // Helper: Check membership tier
   func checkMembershipTier(caller : Principal, requiredTier : MembershipTier) : Bool {
     switch (userProfiles.get(caller)) {
@@ -243,16 +246,21 @@ actor {
   };
 
   // User Profile Management
+  // These functions allow any authenticated user to manage their profile
+  // No role check needed - profile management is the onboarding step
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
+    // Allow any authenticated user to get their own profile
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
     userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
+    // Allow any authenticated user to view their own profile
+    // Admins can view any profile
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
@@ -261,18 +269,19 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
+    // Allow any authenticated user to save their own profile
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
     userProfiles.add(caller, profile);
   };
 
   // Initialize default profile for first-time users
   public shared ({ caller }) func initializeProfile() : async UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can initialize profiles");
+    // Allow any authenticated user to initialize their profile
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
-    
     switch (userProfiles.get(caller)) {
       case (?existingProfile) { existingProfile };
       case (null) {
@@ -962,16 +971,16 @@ actor {
   // Membership Payment & Access Control
 
   public shared ({ caller }) func createCheckoutSession(items : [Stripe.ShoppingItem], successUrl : Text, cancelUrl : Text) : async Text {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can create checkout sessions");
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
     await Stripe.createCheckoutSession(getStripeConfiguration(), caller, items, successUrl, cancelUrl, transform);
   };
 
   // Called by frontend to finalize membership after payment is confirmed
   public shared ({ caller }) func confirmMembershipPurchased(sessionId : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can confirm memberships");
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
 
     switch (paymentSessions.get(sessionId)) {
@@ -1005,10 +1014,10 @@ actor {
     };
   };
 
-  // Stripe payment status checking (admin or session owner only)
+  // Stripe payment status checking (authenticated users only, must own session or be admin)
   public shared ({ caller }) func getStripeSessionStatus(sessionId : Text) : async Stripe.StripeSessionStatus {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can check session status");
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
 
     // Verify caller is admin or session owner
@@ -1023,10 +1032,10 @@ actor {
     };
   };
 
-  // Function to get payment session (admin or session owner only)
+  // Function to get payment session (authenticated users only, must own session or be admin)
   public query ({ caller }) func getPaymentSession(sessionId : Text) : async ?PaymentSession {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can view payment sessions");
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
     };
 
     switch (paymentSessions.get(sessionId)) {

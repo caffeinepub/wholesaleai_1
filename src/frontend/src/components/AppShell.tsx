@@ -3,7 +3,8 @@ import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetTrigger } from '@/components/ui/sheet';
+import { OpaqueSheetContent } from './OpaqueOverlays';
 import { 
   LayoutDashboard, 
   Search, 
@@ -154,14 +155,14 @@ export default function AppShell({ userProfile }: AppShellProps) {
               onClick={() => handleNavClick(item.key)}
               className={`
                 w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
-                transition-all duration-200
+                transition-all duration-200 border
                 ${isActive 
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm' 
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border shadow-sm' 
+                  : 'text-sidebar-foreground border-transparent hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground hover:border-sidebar-border/50'
                 }
               `}
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
+              <Icon className="h-5 w-5 shrink-0" />
               <span className="truncate">{item.label}</span>
             </button>
           );
@@ -186,7 +187,7 @@ export default function AppShell({ userProfile }: AppShellProps) {
         <Button
           onClick={() => handleNavClick('admin')}
           variant="ghost"
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
         >
           <Settings className="mr-3 h-4 w-4" />
           {COPY.nav.admin}
@@ -195,7 +196,7 @@ export default function AppShell({ userProfile }: AppShellProps) {
         <Button
           onClick={handleContactSupport}
           variant="ghost"
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
         >
           <Mail className="mr-3 h-4 w-4" />
           {COPY.support.contactUs}
@@ -204,7 +205,7 @@ export default function AppShell({ userProfile }: AppShellProps) {
         <Button
           onClick={handleLogout}
           variant="ghost"
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
         >
           <LogOut className="mr-3 h-4 w-4" />
           Logout
@@ -224,11 +225,11 @@ export default function AppShell({ userProfile }: AppShellProps) {
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0 bg-sidebar-background">
+            <OpaqueSheetContent side="left" className="w-64 p-0">
               <div className="flex flex-col h-full">
                 <SidebarContent />
               </div>
-            </SheetContent>
+            </OpaqueSheetContent>
           </Sheet>
           <div className="flex items-center gap-2">
             <img
@@ -252,7 +253,7 @@ export default function AppShell({ userProfile }: AppShellProps) {
       {/* Desktop Sidebar */}
       {!isMobile && (
         <aside 
-          className="w-64 flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background shadow-sidebar"
+          className="w-64 shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background shadow-sidebar"
         >
           <SidebarContent />
         </aside>

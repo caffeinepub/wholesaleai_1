@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { OpaqueSelectContent } from '../components/OpaqueOverlays';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, DollarSign, Users, CreditCard, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -170,7 +171,7 @@ export default function AdminPanelPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto p-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
         <p className="text-muted-foreground">Manage membership pricing, user tiers, and payment settings</p>
@@ -380,11 +381,11 @@ export default function AdminPanelPage() {
                   <SelectTrigger id="grant-tier">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <OpaqueSelectContent>
                     <SelectItem value={MembershipTier.Basic}>Basic</SelectItem>
                     <SelectItem value={MembershipTier.Pro}>Pro</SelectItem>
                     <SelectItem value={MembershipTier.Enterprise}>Enterprise</SelectItem>
-                  </SelectContent>
+                  </OpaqueSelectContent>
                 </Select>
               </div>
               <Button
@@ -453,7 +454,7 @@ export default function AdminPanelPage() {
               </div>
               <Button
                 onClick={handleConfigureStripe}
-                disabled={setStripeConfig.isPending || !stripeSecretKey}
+                disabled={setStripeConfig.isPending}
                 className="w-full"
               >
                 {setStripeConfig.isPending ? (

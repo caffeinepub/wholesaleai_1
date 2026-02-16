@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile, useInitializeProfile } from './hooks/useQueries';
+import { useGetCallerUserProfile } from './hooks/useQueries';
 import { useBackendActor } from './hooks/useBackendActor';
 import SignInScreen from './components/SignInScreen';
 import ProfileSetupDialog from './components/ProfileSetupDialog';
@@ -37,8 +37,6 @@ export default function App() {
     error: profileErrorObj,
     refetch: retryProfile,
   } = useGetCallerUserProfile();
-  
-  const initializeProfile = useInitializeProfile();
 
   const [currentPath, setCurrentPath] = useState(getCurrentRoutePath());
   const [startupError, setStartupError] = useState<StartupError | null>(null);
@@ -81,26 +79,44 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [identity, currentStage]);
 
-  // Track startup stages
+  // Track startup stages with improved logic
   useEffect(() => {
     if (identityInitializing) {
       setCurrentStage('identity-init');
-    } else if (!identity) {
-      setCurrentStage('identity-init');
-    } else if (actorLoading) {
-      setCurrentStage('actor-init');
-    } else if (actorReady) {
-      // Check if we're on a payment route
-      if (currentPath === '/payment-success' || currentPath === '/payment-failure') {
-        setCurrentStage('ready');
-      } else if (profileLoading) {
-        setCurrentStage('profile-fetch');
-      } else if (profileFetched || profileError) {
-        setCurrentStage('ready');
-      } else {
-        setCurrentStage('route-check');
-      }
+      return;
     }
+    
+    if (!identity) {
+      setCurrentStage('identity-init');
+      return;
+    }
+    
+    // Identity is ready, check actor
+    if (actorLoading || !actorReady) {
+      setCurrentStage('actor-init');
+      return;
+    }
+    
+    // Actor is ready, check if we're on a payment route
+    if (currentPath === '/payment-success' || currentPath === '/payment-failure') {
+      setCurrentStage('ready');
+      return;
+    }
+    
+    // Not on payment route, need to check profile
+    if (profileLoading) {
+      setCurrentStage('profile-fetch');
+      return;
+    }
+    
+    // Profile query has completed (either success or error)
+    if (profileFetched || profileError) {
+      setCurrentStage('ready');
+      return;
+    }
+    
+    // Profile query hasn't started yet (shouldn't happen with actorReady, but handle it)
+    setCurrentStage('route-check');
   }, [identityInitializing, identity, actorLoading, actorReady, profileLoading, profileFetched, profileError, currentPath]);
 
   // Handle actor initialization errors
@@ -114,18 +130,28 @@ export default function App() {
     }
   }, [actorError, actorErrorObj]);
 
-  // Handle profile fetch errors (but not missing profile)
+  // Handle profile fetch errors
   useEffect(() => {
     if (profileError && profileErrorObj) {
       const errorMsg = profileErrorObj.message || '';
-      // Don't treat "needs setup" as an error
-      if (!errorMsg.includes('profile') && !errorMsg.includes('setup')) {
-        setStartupError({
-          stage: 'profile-fetch',
-          message: 'Failed to load your profile. This may be a temporary issue.',
-          technicalDetail: errorMsg,
-        });
+      
+      // Classify the error type
+      let message = 'Failed to load your profile. Please try again.';
+      let technicalDetail = errorMsg;
+      
+      if (errorMsg.includes('timed out') || errorMsg.includes('timeout')) {
+        message = 'Profile loading timed out. Please check your connection and try again.';
+      } else if (errorMsg.includes('Unauthorized') || errorMsg.includes('Authentication')) {
+        message = 'Authentication error. Please sign out and sign in again.';
+      } else if (errorMsg.includes('network') || errorMsg.includes('connection')) {
+        message = 'Network error. Please check your connection and try again.';
       }
+      
+      setStartupError({
+        stage: 'profile-fetch',
+        message,
+        technicalDetail,
+      });
     }
   }, [profileError, profileErrorObj]);
 
@@ -163,6 +189,8 @@ export default function App() {
     return (
       <StartupErrorScreen
         message={startupError.message}
+        stage={startupError.stage}
+        technicalDetail={startupError.technicalDetail}
         onRetry={handleRetry}
       />
     );
@@ -179,17 +207,12 @@ export default function App() {
   }
 
   // Show loading while actor initializes
-  if (actorLoading) {
+  if (actorLoading || !actorReady) {
     return <StartupLoadingScreen message="Connecting..." />;
   }
 
   // Handle payment result pages (must be authenticated and actor ready)
   if (isPaymentSuccessPage || isPaymentFailurePage) {
-    // Wait for actor to be ready before showing payment pages
-    if (!actorReady) {
-      return <StartupLoadingScreen message="Loading payment status..." />;
-    }
-    
     if (isPaymentSuccessPage) {
       return <PaymentSuccessPage />;
     }
@@ -199,17 +222,16 @@ export default function App() {
     }
   }
 
-  // Wait for actor to be ready before fetching profile
-  if (!actorReady) {
-    return <StartupLoadingScreen message="Connecting..." />;
-  }
-
   // Show loading while fetching profile
   if (profileLoading) {
     return <StartupLoadingScreen message="Loading your profile..." />;
   }
 
+  // If profile fetch failed with error, we already showed error screen above
+  // If we get here, profile fetch completed (either with data or null)
+  
   // Show profile setup dialog if user doesn't have a profile yet (null or empty name)
+  // Only show after profile fetch is complete to avoid flash
   const showProfileSetup = isAuthenticated && actorReady && profileFetched && userProfile === null;
 
   return (

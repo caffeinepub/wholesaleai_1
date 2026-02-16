@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T20:21:00.373Z",
+  "generatedAt": "2026-02-16T21:07:31.599Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,82 +12,63 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the startup flow so the app reliably reaches a usable screen (Sign In, Profile Setup, or Dashboard) after launch, with no blank screen or infinite loading.",
+        "summary": "Eliminate the infinite startup loading state when fetching the signed-in user's profile so the app always transitions to one of: AppShell, ProfileSetupDialog, or StartupErrorScreen.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/App.tsx",
-          "frontend/src/hooks/useBackendActor.ts"
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure authenticated users can successfully load their profile and use the app without requiring an admin token, including first-time users with no existing profile data.",
+        "summary": "Add a hard timeout to the profile fetch request used by useGetCallerUserProfile (React Query) so that a hung canister/agent call results in a surfaced error instead of a permanent loading state.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/ProfileSetupDialog.tsx",
-          "frontend/src/components/AppShell.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/ProfileSetupDialog.tsx",
-          "frontend/src/components/AppShell.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Improve startup error reporting so that when startup fails (actor creation, authorization/profile fetch, or routing issues), the error screen clearly displays the underlying failure reason in English and provides a reliable recovery path.",
+        "summary": "Update the startup gating logic in frontend/src/App.tsx so that the UI does not block forever on profileLoading; if the profile query is not loading but is also not fetched due to being disabled, cancelled, or errored, the user should see an actionable error state rather than a loading spinner.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/StartupErrorScreen.tsx",
-          "frontend/src/hooks/useQueries.ts",
           "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/StartupErrorScreen.tsx",
-          "frontend/src/hooks/useQueries.ts",
           "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Make payment result page detection and startup routing resilient for Internet Computer hosting (including hash-based URLs) so users can open payment success/failure pages without the app misrouting or failing at startup.",
+        "summary": "Add lightweight diagnostic details for the profile-loading stage to aid support/debugging without exposing secrets (e.g., show current startup stage and a short technical hint only on the error screen).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/urlParams.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/pages/PaymentSuccessPage.tsx",
-          "frontend/src/pages/PaymentFailurePage.tsx"
+          "frontend/src/components/StartupErrorScreen.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/urlParams.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/pages/PaymentSuccessPage.tsx",
-          "frontend/src/pages/PaymentFailurePage.tsx"
+          "frontend/src/components/StartupErrorScreen.tsx",
+          "frontend/src/App.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/App.tsx",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/AppShell.tsx",
-    "frontend/src/components/ProfileSetupDialog.tsx",
     "frontend/src/components/StartupErrorScreen.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/PaymentFailurePage.tsx",
-    "frontend/src/pages/PaymentSuccessPage.tsx",
+    "frontend/src/pages/MembershipPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

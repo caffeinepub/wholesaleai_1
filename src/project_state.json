@@ -4,37 +4,37 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Build/app fails to start for the user (unable to launch)."
+    "Profile still stuck on loading (profile loading behavior not fixed)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-startup-flow-so-the-app-reliably-reaches-a-usable-screen-sign-in-profile-setup-or-dashboard-after-launch-with-no-blank-screen-or-infinite-loading",
-      "title": "Fix the startup flow so the app reliably reaches a usable screen (Sign In, Profile Setup, or Dashboard) after launch, with no blank screen or infinite loading.",
+      "id": "feature-eliminate-the-infinite-startup-loading-state-when-fetching-the-signed-in-user-s-profile-so-the-app-always-transitions-to-one-of-appshell-profilesetupdialog-or-startuperrorscreen",
+      "title": "Eliminate the infinite startup loading state when fetching the signed-in user's profile so the app always transitions to one of: AppShell, ProfileSetupDialog, or StartupErrorScreen.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-authenticated-users-can-successfully-load-their-profile-and-use-the-app-without-requiring-an-admin-token-including-first-time-users-with-no-existing-profile-data",
-      "title": "Ensure authenticated users can successfully load their profile and use the app without requiring an admin token, including first-time users with no existing profile data.",
+      "id": "feature-add-a-hard-timeout-to-the-profile-fetch-request-used-by-usegetcalleruserprofile-react-query-so-that-a-hung-canister-agent-call-results-in-a-surfaced-error-instead-of-a-permanent-loading-state",
+      "title": "Add a hard timeout to the profile fetch request used by useGetCallerUserProfile (React Query) so that a hung canister/agent call results in a surfaced error instead of a permanent loading state.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-startup-error-reporting-so-that-when-startup-fails-actor-creation-authorization-profile-fetch-or-routing-issues-the-error-screen-clearly-displays-the-underlying-failure-reason-in-english-and-provides-a-reliable-recovery-path",
-      "title": "Improve startup error reporting so that when startup fails (actor creation, authorization/profile fetch, or routing issues), the error screen clearly displays the underlying failure reason in English and provides a reliable recovery path.",
+      "id": "feature-update-the-startup-gating-logic-in-frontend-src-app-tsx-so-that-the-ui-does-not-block-forever-on-profileloading-if-the-profile-query-is-not-loading-but-is-also-not-fetched-due-to-being-disabled-cancelled-or-errored-the-user-should-see-an-actionable-error-state-rather-than-a-loading-spinner",
+      "title": "Update the startup gating logic in frontend/src/App.tsx so that the UI does not block forever on profileLoading; if the profile query is not loading but is also not fetched due to being disabled, cancelled, or errored, the user should see an actionable error state rather than a loading spinner.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-make-payment-result-page-detection-and-startup-routing-resilient-for-internet-computer-hosting-including-hash-based-urls-so-users-can-open-payment-success-failure-pages-without-the-app-misrouting-or-failing-at-startup",
-      "title": "Make payment result page detection and startup routing resilient for Internet Computer hosting (including hash-based URLs) so users can open payment success/failure pages without the app misrouting or failing at startup.",
+      "id": "feature-add-lightweight-diagnostic-details-for-the-profile-loading-stage-to-aid-support-debugging-without-exposing-secrets-e-g-show-current-startup-stage-and-a-short-technical-hint-only-on-the-error-screen",
+      "title": "Add lightweight diagnostic details for the profile-loading stage to aid support/debugging without exposing secrets (e.g., show current startup stage and a short technical hint only on the error screen).",
       "reqIds": [
         "REQ-4"
       ],

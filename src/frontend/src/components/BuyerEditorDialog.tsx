@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGetBuyer, useCreateBuyer, useUpdateBuyer, useDeleteBuyer } from '../hooks/useQueries';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { OpaqueDialogContent } from './OpaqueOverlays';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -118,7 +119,7 @@ export default function BuyerEditorDialog({ buyerId, open, onOpenChange }: Buyer
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <OpaqueDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{buyerId ? 'Edit Buyer' : 'Add New Buyer'}</DialogTitle>
         </DialogHeader>
@@ -229,8 +230,7 @@ export default function BuyerEditorDialog({ buyerId, open, onOpenChange }: Buyer
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
+      </OpaqueDialogContent>
     </Dialog>
   );
 }
-

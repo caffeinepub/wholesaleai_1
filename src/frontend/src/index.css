@@ -6,15 +6,15 @@
   :root {
     /* Background colors - deep blacks */
     --background: 0 0% 4%;
-    --foreground: 40 10% 96%;
+    --foreground: 230 85% 75%;
 
     /* Card colors - slightly lighter blacks */
     --card: 0 0% 8%;
-    --card-foreground: 40 10% 96%;
+    --card-foreground: 230 85% 75%;
 
-    /* Popover colors */
+    /* Popover colors - fully opaque */
     --popover: 0 0% 8%;
-    --popover-foreground: 40 10% 96%;
+    --popover-foreground: 230 85% 75%;
 
     /* Primary - warm orange/amber (hue ~45) */
     --primary: 45 95% 58%;
@@ -22,7 +22,7 @@
 
     /* Secondary - muted warm gray */
     --secondary: 40 5% 18%;
-    --secondary-foreground: 40 10% 96%;
+    --secondary-foreground: 230 85% 75%;
 
     /* Muted - subtle warm gray */
     --muted: 40 5% 15%;
@@ -30,7 +30,7 @@
 
     /* Accent - slightly brighter warm tone */
     --accent: 40 8% 20%;
-    --accent-foreground: 40 10% 96%;
+    --accent-foreground: 230 85% 75%;
 
     /* Destructive - red for errors */
     --destructive: 0 72% 51%;
@@ -56,14 +56,14 @@
     --chart-4: 15 80% 50%;
     --chart-5: 55 75% 55%;
 
-    /* Sidebar colors - fully opaque with clear separation */
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 40 10% 92%;
+    /* Sidebar colors - improved contrast and separation */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 230 70% 72%;
     --sidebar-primary: 45 95% 58%;
     --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 40 8% 14%;
-    --sidebar-accent-foreground: 40 10% 92%;
-    --sidebar-border: 45 30% 25%;
+    --sidebar-accent: 45 20% 18%;
+    --sidebar-accent-foreground: 230 85% 80%;
+    --sidebar-border: 45 25% 22%;
     --sidebar-ring: 45 95% 58%;
 
     --radius: 0.5rem;
@@ -72,7 +72,7 @@
   .dark {
     /* Already dark by default, but keeping for consistency */
     --background: 0 0% 4%;
-    --foreground: 40 10% 96%;
+    --foreground: 230 85% 75%;
   }
 }
 
@@ -90,5 +90,16 @@
   h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     letter-spacing: -0.02em;
+  }
+}
+
+/* Utility classes for opaque overlay surfaces */
+@layer utilities {
+  .opaque-surface {
+    @apply bg-popover backdrop-blur-none;
+  }
+  
+  .opaque-sidebar-surface {
+    @apply bg-sidebar-background backdrop-blur-none;
   }
 }

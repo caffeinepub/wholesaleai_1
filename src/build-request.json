@@ -1,104 +1,92 @@
 {
   "kind": "build_request",
-  "title": "Fix app startup failures and unblock first-time sign-in",
+  "title": "Fix infinite 'Loading your profile' startup state",
   "projectName": "Wholesale Lens",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the startup flow so the app reliably reaches a usable screen (Sign In, Profile Setup, or Dashboard) after launch, with no blank screen or infinite loading.",
+      "text": "Eliminate the infinite startup loading state when fetching the signed-in user's profile so the app always transitions to one of: AppShell, ProfileSetupDialog, or StartupErrorScreen.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-4"
+          "msg-4"
         ],
         "quotes": [
-          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
+          "Nope still stuck on loading profile"
         ]
       },
       "acceptanceCriteria": [
-        "Launching the app shows a visible UI within 30 seconds (loading, sign-in, or an actionable error screen).",
-        "No uncaught exceptions occur during initial render (verify via browser console).",
-        "If the backend/identity is unavailable, the user sees StartupErrorScreen with a working Retry button."
+        "After signing in, the app does not remain on the \"Loading your profile...\" screen indefinitely.",
+        "Within a bounded time (e.g., <= 30 seconds), the app transitions to either: the main app shell, the profile setup dialog (when profile is missing/empty), or an error screen with a working Retry button.",
+        "Retry from the error screen re-attempts the profile fetch without requiring a full page refresh."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure authenticated users can successfully load their profile and use the app without requiring an admin token, including first-time users with no existing profile data.",
-      "target": "both",
+      "text": "Add a hard timeout to the profile fetch request used by useGetCallerUserProfile (React Query) so that a hung canister/agent call results in a surfaced error instead of a permanent loading state.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-4"
+          "msg-4"
         ],
         "quotes": [
-          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
+          "Nope still stuck on loading profile"
         ]
       },
       "acceptanceCriteria": [
-        "A newly authenticated principal can call `getCallerUserProfile` without receiving an unauthorized error.",
-        "If the user has no completed profile (e.g., name is empty), the app shows ProfileSetupDialog and can save successfully.",
-        "After saving a profile, the app transitions into the normal AppShell experience without requiring a page refresh."
+        "If getCallerUserProfile does not resolve within the configured timeout window, the query transitions to an error state (not loading).",
+        "The error message shown to the user is in English and indicates the profile could not be loaded and they should retry.",
+        "The timeout behavior does not break the normal case where profiles load successfully."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Improve startup error reporting so that when startup fails (actor creation, authorization/profile fetch, or routing issues), the error screen clearly displays the underlying failure reason in English and provides a reliable recovery path.",
+      "text": "Update the startup gating logic in frontend/src/App.tsx so that the UI does not block forever on profileLoading; if the profile query is not loading but is also not fetched due to being disabled, cancelled, or errored, the user should see an actionable error state rather than a loading spinner.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-4"
+          "msg-4"
         ],
         "quotes": [
-          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
+          "Nope still stuck on loading profile"
         ]
       },
       "acceptanceCriteria": [
-        "StartupErrorScreen displays an actionable, user-readable message derived from the underlying error (not just a generic fallback), while remaining safe (no secrets).",
-        "The Retry button triggers the correct retry action (backend connection vs. profile fetch) and can recover without a full reload when the transient issue is resolved.",
-        "The app does not get stuck in a retry loop; repeated failures keep the user on a stable error screen."
+        "If the profile query is disabled/not running (e.g., actor not ready) the app shows the appropriate earlier stage (e.g., Connecting...) and does not show \"Loading your profile...\".",
+        "If the profile query errors (including timeout), the app shows StartupErrorScreen with a Retry action wired to re-run the profile query.",
+        "The app does not render ProfileSetupDialog until it has definitively determined the profile is missing (i.e., after a successful fetch returning null)."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Make payment result page detection and startup routing resilient for Internet Computer hosting (including hash-based URLs) so users can open payment success/failure pages without the app misrouting or failing at startup.",
+      "text": "Add lightweight diagnostic details for the profile-loading stage to aid support/debugging without exposing secrets (e.g., show current startup stage and a short technical hint only on the error screen).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-4"
+          "msg-4"
         ],
         "quotes": [
-          "Unable to start it says I said make it usable and fix your errors on every thing cmon"
+          "Nope still stuck on loading profile"
         ]
       },
       "acceptanceCriteria": [
-        "Visiting a hash-based URL for payment results (e.g., `#/payment-success` or equivalent used by the app) correctly renders PaymentSuccessPage after authentication and actor readiness.",
-        "Visiting non-payment URLs does not incorrectly trigger the payment flow.",
-        "Navigation/back-forward changes update the rendered route without breaking startup."
+        "When a startup error occurs at the profile-fetch stage, the error screen includes enough context to distinguish a timeout vs. authorization vs. generic failure (in user-safe language).",
+        "No admin tokens, principals, or other secrets are displayed in the UI."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under `frontend/src/components/ui` (compose existing shadcn components instead).",
-    "Do not edit immutable hook entry files listed in SYSTEM_CONTEXT (e.g., `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`).",
-    "Backend must remain a single Motoko actor in `backend/main.mo`; only add `backend/migration.mo` if a state upgrade is required."
+    "Do not edit any files under frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui (immutable paths).",
+    "Backend must remain single-actor; only introduce backend changes if strictly necessary to resolve the profile loading hang."
   ],
   "nonGoals": [
-    "Adding new product features beyond making the app start and be usable.",
-    "Integrating third-party auth providers beyond Internet Identity.",
-    "Adding external databases or non-Motoko backend services."
+    "Adding new authentication providers (only Internet Identity is in scope).",
+    "Implementing real-time updates or WebSocket-based loading indicators.",
+    "Redesigning unrelated pages (deals, buyers, contracts, membership) beyond what is necessary to resolve the profile loading hang."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSaveCallerUserProfile } from '../hooks/useQueries';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { OpaqueDialogContent } from './OpaqueOverlays';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,7 @@ export default function ProfileSetupDialog() {
 
   return (
     <Dialog open={true}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+      <OpaqueDialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Welcome to Wholesale Lens</DialogTitle>
           <DialogDescription>
@@ -111,7 +112,7 @@ export default function ProfileSetupDialog() {
             )}
           </Button>
         </form>
-      </DialogContent>
+      </OpaqueDialogContent>
     </Dialog>
   );
 }

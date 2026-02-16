@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useGetDeal, useCreateDeal, useUpdateDeal, useDeleteDeal, useGetBuyers } from '../hooks/useQueries';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { OpaqueDialogContent, OpaqueSelectContent } from './OpaqueOverlays';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DealStage } from '../backend';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
@@ -145,7 +146,7 @@ export default function DealEditorDialog({ dealId, open, onOpenChange }: DealEdi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <OpaqueDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{dealId ? 'Edit Deal' : 'Create New Deal'}</DialogTitle>
         </DialogHeader>
@@ -157,13 +158,13 @@ export default function DealEditorDialog({ dealId, open, onOpenChange }: DealEdi
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <OpaqueSelectContent>
                   {stages.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
                       {s.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
+                </OpaqueSelectContent>
               </Select>
             </div>
           )}
@@ -218,6 +219,9 @@ export default function DealEditorDialog({ dealId, open, onOpenChange }: DealEdi
                 onChange={(e) => setRepairs(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="askingPrice">Asking Price ($)</Label>
               <Input
@@ -236,6 +240,28 @@ export default function DealEditorDialog({ dealId, open, onOpenChange }: DealEdi
                 onChange={(e) => setYourOffer(e.target.value)}
               />
             </div>
+          </div>
+
+          {dealId && buyers.length > 0 && (
+            <div className="space-y-2">
+              <Label>Assigned Buyer</Label>
+              <Select value={assignedBuyer} onValueChange={setAssignedBuyer}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a buyer" />
+                </SelectTrigger>
+                <OpaqueSelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {buyers.map((buyer) => (
+                    <SelectItem key={buyer.id.toString()} value={buyer.id.toString()}>
+                      {buyer.name}
+                    </SelectItem>
+                  ))}
+                </OpaqueSelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="estimatedProfit">Estimated Profit ($)</Label>
               <Input
@@ -245,7 +271,7 @@ export default function DealEditorDialog({ dealId, open, onOpenChange }: DealEdi
                 onChange={(e) => setEstimatedProfit(e.target.value)}
               />
             </div>
-            {dealId && stage === DealStage.Closed && (
+            {dealId && (
               <div className="space-y-2">
                 <Label htmlFor="actualProfit">Actual Profit ($)</Label>
                 <Input
@@ -257,25 +283,6 @@ export default function DealEditorDialog({ dealId, open, onOpenChange }: DealEdi
               </div>
             )}
           </div>
-
-          {buyers.length > 0 && (
-            <div className="space-y-2">
-              <Label>Assigned Buyer</Label>
-              <Select value={assignedBuyer} onValueChange={setAssignedBuyer}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select buyer..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">None</SelectItem>
-                  {buyers.map((buyer) => (
-                    <SelectItem key={buyer.id.toString()} value={buyer.id.toString()}>
-                      {buyer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
@@ -311,8 +318,7 @@ export default function DealEditorDialog({ dealId, open, onOpenChange }: DealEdi
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
+      </OpaqueDialogContent>
     </Dialog>
   );
 }
-

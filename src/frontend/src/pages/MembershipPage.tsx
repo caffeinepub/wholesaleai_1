@@ -9,6 +9,11 @@ import { toast } from 'sonner';
 import { MembershipTier, type ShoppingItem } from '../backend';
 import { formatCents } from '../lib/money';
 
+type CheckoutSession = {
+  id: string;
+  url: string;
+};
+
 export default function MembershipPage() {
   const { data: catalog, isLoading } = useGetMembershipCatalog();
   const createCheckoutSession = useCreateCheckoutSession();
@@ -62,6 +67,7 @@ export default function MembershipPage() {
       const successUrl = `${baseUrl}/payment-success`;
       const cancelUrl = `${baseUrl}/payment-cancel`;
 
+      // The mutation already returns the parsed session object
       const session = await createCheckoutSession.mutateAsync({
         items,
         successUrl,
