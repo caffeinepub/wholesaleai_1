@@ -1,83 +1,40 @@
 {
   "kind": "build_request",
-  "title": "Fix startup authentication error during profile loading",
+  "title": "Fill sidebar navigation boxes with solid color styling",
   "projectName": "Wholesale Lens",
-  "priority": "high",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Prevent the app from attempting to load the caller profile when the user is not authenticated (so signed-out users see the SignInScreen instead of a startup error). Update the profile query gating so useGetCallerUserProfile only runs when an authenticated Internet Identity is present (not just when an anonymous actor is ready).",
+      "text": "Update the sidebar navigation item “boxes” (all sidebar buttons/links such as Dashboard, Contracts, Admin Panel, Contact Support, Sign Out) so they render as clearly filled-in, solid-color buttons with improved visual polish (stronger background fill, clear borders, and consistent hover/active states) in both light and dark mode, on both desktop sidebar and the mobile sidebar sheet.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "recent-messages-4"
         ],
         "quotes": [
-          "Unable to Start\nAuthentication error. Please sign out and sign in again.\n\nFailed at: Profile loading\n\nThere was an authentication problem. Try signing out and signing in again."
+          "Make those side b ar boxes filled in with color make it look nice"
         ]
       },
       "acceptanceCriteria": [
-        "When the user is signed out (identity is undefined), the app does not call getCallerUserProfile and does not show the 'Unable to Start' error screen for profile loading; it shows SignInScreen.",
-        "After signing in, the profile query runs and the app proceeds to AppShell or ProfileSetupDialog (or shows an error only if the authenticated profile fetch genuinely fails)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add a clear recovery path on the startup error screen for authentication-related profile loading failures: show a \"Sign Out\" action that clears Internet Identity state and returns the user to the sign-in screen. Use English for all user-facing text.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "Authentication error. Please sign out and sign in again.",
-          "There was an authentication problem. Try signing out and signing in again."
-        ]
-      },
-      "acceptanceCriteria": [
-        "If startup fails at 'Profile loading' with an authentication-related error, the error UI includes a \"Sign Out\" button in addition to retry/support.",
-        "Clicking \"Sign Out\" clears the Internet Identity session (calls the existing clear/logout flow) and the app returns to SignInScreen without requiring a manual refresh."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Normalize authentication-related errors from the profile fetch path so they are consistently detected and presented as an authentication issue (ensuring the startup stage shows 'Failed at: Profile loading' with the authentication guidance, and not a generic 'Failed to load profile' message).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "Failed at: Profile loading",
-          "Authentication error. Please sign out and sign in again."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Authentication failures originating from getCallerUserProfile (e.g., backend traps containing \"Unauthorized\" / \"Authentication required\") are mapped to a consistent error message that triggers the authentication recovery UI.",
-        "Non-auth failures (timeouts, network errors) continue to show their appropriate messages and do not display the sign-out CTA unless the error is authentication-related."
+        "All sidebar navigation buttons have a visibly solid (non-transparent) background fill in light mode and dark mode; underlying page content is not visible through them.",
+        "Default, hover, focus, and active states are visually distinct and consistent across all sidebar buttons (including Admin Panel, Contact Support, and Sign Out).",
+        "The same filled-in styling applies in the mobile sidebar (Sheet) as well as the desktop sidebar.",
+        "No changes are made to any immutable frontend paths (e.g., frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*)."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/components/ui (read-only UI library components).",
-    "Do not modify immutable identity/actor hook files listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts and frontend/src/hooks/useActor.ts)."
+    "Frontend changes must respect immutable paths listed in SYSTEM_CONTEXT (do not edit frontend/src/components/ui/* and the immutable hook/main files).",
+    "Backend (Motoko) logic and state must not be modified for this styling-only request."
   ],
   "nonGoals": [
-    "Implementing a new authentication provider (only Internet Identity is used).",
-    "Changing backend authorization rules or access-control policy in the canister (unless strictly required to fix the reported startup issue)."
+    "Adding new navigation routes/pages or changing the sidebar information architecture.",
+    "Changing authentication, membership gating, or backend authorization logic.",
+    "Generating new images or logos for the sidebar."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

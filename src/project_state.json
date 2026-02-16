@@ -3,37 +3,26 @@
   "projectStateVersion": 3,
   "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [
-    "App unable to start due to authentication error during profile loading (prompts user to sign out and sign in again)."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-prevent-the-app-from-attempting-to-load-the-caller-profile-when-the-user-is-not-authenticated-so-signed-out-users-see-the-signinscreen-instead-of-a-startup-error-update-the-profile-query-gating-so-usegetcalleruserprofile-only-runs-when-an-authenticated-internet-identity-is-present-not-just-when-an-anonymous-actor-is-ready",
-      "title": "Prevent the app from attempting to load the caller profile when the user is not authenticated (so signed-out users see the SignInScreen instead of a startup error). Update the profile query gating so useGetCallerUserProfile only runs when an authenticated Internet Identity is present (not just when an anonymous actor is ready).",
+      "id": "feature-update-the-sidebar-navigation-item-boxes-all-sidebar-buttons-links-such-as-dashboard-contracts-admin-panel-contact-support-sign-out-so-they-render-as-clearly-filled-in-solid-color-buttons-with-improved-visual-polish-stronger-background-fill-clear-borders-and-consistent-hover-active-states-in-both-light-and-dark-mode-on-both-desktop-sidebar-and-the-mobile-sidebar-sheet",
+      "title": "Update the sidebar navigation item “boxes” (all sidebar buttons/links such as Dashboard, Contracts, Admin Panel, Contact Support, Sign Out) so they render as clearly filled-in, solid-color buttons with improved visual polish (stronger background fill, clear borders, and consistent hover/active states) in both light and dark mode, on both desktop sidebar and the mobile sidebar sheet.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-add-a-clear-recovery-path-on-the-startup-error-screen-for-authentication-related-profile-loading-failures-show-a-sign-out-action-that-clears-internet-identity-state-and-returns-the-user-to-the-sign-in-screen-use-english-for-all-user-facing-text",
-      "title": "Add a clear recovery path on the startup error screen for authentication-related profile loading failures: show a \"Sign Out\" action that clears Internet Identity state and returns the user to the sign-in screen. Use English for all user-facing text.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-normalize-authentication-related-errors-from-the-profile-fetch-path-so-they-are-consistently-detected-and-presented-as-an-authentication-issue-ensuring-the-startup-stage-shows-failed-at-profile-loading-with-the-authentication-guidance-and-not-a-generic-failed-to-load-profile-message",
-      "title": "Normalize authentication-related errors from the profile fetch path so they are consistently detected and presented as an authentication issue (ensuring the startup stage shows 'Failed at: Profile loading' with the authentication guidance, and not a generic 'Failed to load profile' message).",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Update sidebar box styling to be filled with color and improve overall visual appeal",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
   "projectName": "Wholesale Lens",
   "clarification_mode": "instant",
   "clarification_rounds": 0

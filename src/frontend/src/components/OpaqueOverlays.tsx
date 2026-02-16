@@ -26,7 +26,7 @@ export const OpaqueDialogContent = React.forwardRef<
     ref={ref}
     className={cn(
       '!bg-card border-border backdrop-blur-none',
-      '[&~div]:!bg-background/80 [&~div]:backdrop-blur-none',
+      '[&~div]:!bg-background/95 [&~div]:backdrop-blur-none',
       className
     )}
     {...props}
@@ -43,8 +43,8 @@ export const OpaqueSheetContent = React.forwardRef<
   <SheetContent
     ref={ref}
     className={cn(
-      '!bg-sidebar-background border-sidebar-border backdrop-blur-none',
-      '[&~div]:!bg-background/80 [&~div]:backdrop-blur-none',
+      '!bg-sidebar border-sidebar-border backdrop-blur-none',
+      '[&~div]:!bg-background/95 [&~div]:backdrop-blur-none',
       className
     )}
     {...props}

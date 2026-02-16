@@ -307,8 +307,10 @@ export interface backendInterface {
     getPaymentSession(sessionId: string): Promise<PaymentSession | null>;
     getStripeSessionStatus(sessionId: string): Promise<StripeSessionStatus>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    hasUserProfile(): Promise<boolean>;
     initializeProfile(): Promise<UserProfile>;
     isCallerAdmin(): Promise<boolean>;
+    isFirstTimeUser(): Promise<boolean>;
     isStripeConfigured(): Promise<boolean>;
     listBuyers(): Promise<Array<Buyer>>;
     listContractsByDeal(dealId: bigint): Promise<Array<ContractDocument>>;
@@ -705,6 +707,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
         }
     }
+    async hasUserProfile(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.hasUserProfile();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.hasUserProfile();
+            return result;
+        }
+    }
     async initializeProfile(): Promise<UserProfile> {
         if (this.processError) {
             try {
@@ -730,6 +746,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.isCallerAdmin();
+            return result;
+        }
+    }
+    async isFirstTimeUser(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isFirstTimeUser();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isFirstTimeUser();
             return result;
         }
     }

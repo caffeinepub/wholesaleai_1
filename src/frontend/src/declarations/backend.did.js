@@ -273,8 +273,10 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'hasUserProfile' : IDL.Func([], [IDL.Bool], ['query']),
   'initializeProfile' : IDL.Func([], [UserProfile], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isFirstTimeUser' : IDL.Func([], [IDL.Bool], []),
   'isStripeConfigured' : IDL.Func([], [IDL.Bool], ['query']),
   'listBuyers' : IDL.Func([], [IDL.Vec(Buyer)], ['query']),
   'listContractsByDeal' : IDL.Func(
@@ -627,8 +629,10 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'hasUserProfile' : IDL.Func([], [IDL.Bool], ['query']),
     'initializeProfile' : IDL.Func([], [UserProfile], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isFirstTimeUser' : IDL.Func([], [IDL.Bool], []),
     'isStripeConfigured' : IDL.Func([], [IDL.Bool], ['query']),
     'listBuyers' : IDL.Func([], [IDL.Vec(Buyer)], ['query']),
     'listContractsByDeal' : IDL.Func(

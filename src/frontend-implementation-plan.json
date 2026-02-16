@@ -1,75 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix startup auth gating and recovery for profile loading",
+  "title": "Wholesale Lens - Solid filled sidebar navigation button styling (desktop + mobile)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Gate caller profile loading so it only runs when an authenticated Internet Identity is present, preventing signed-out startup auth errors and showing SignInScreen instead.",
+      "summary": "Refine sidebar navigation buttons to be clearly solid, filled, and visually consistent across default/hover/focus/active states in light/dark mode for both desktop sidebar and mobile Sheet sidebar.",
       "acceptanceCriteria": [
-        "When the user is signed out (identity is undefined), the app does not call getCallerUserProfile and does not show the 'Unable to Start' error screen for profile loading; it shows SignInScreen.",
-        "After signing in, the profile query runs and the app proceeds to AppShell or ProfileSetupDialog (or shows an error only if the authenticated profile fetch genuinely fails)."
+        "All sidebar navigation buttons have a visibly solid (non-transparent) background fill in light mode and dark mode; underlying page content is not visible through them.",
+        "Default, hover, focus, and active states are visually distinct and consistent across all sidebar buttons (including Admin Panel, Contact Support, and Sign Out).",
+        "The same filled-in styling applies in the mobile sidebar (Sheet) as well as the desktop sidebar.",
+        "No changes are made to any immutable frontend paths (e.g., frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/AppShell.tsx",
           "operation": "modify",
-          "description": "Update useGetCallerUserProfile to only enable the React Query fetch when an authenticated Internet Identity is present (not merely when an anonymous actor is ready). Use the selected \"authorization\" component guidance to ensure the app requires login before accessing user profile data; verify the component's usage instructions before implementing."
+          "description": "Unify sidebar button markup to rely on a single shared styling contract for all nav items (including Admin Panel, Contact Support, Sign Out) by: (1) adding an explicit active flag (e.g., data-active and/or aria-current) per item, (2) applying a consistent base class list for all sidebar buttons, and (3) adding a dedicated modifier class for the destructive Sign Out button so hover/active states remain consistent and clearly filled in both desktop sidebar and mobile Sheet sidebar."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Adjust startup stage logic so the app does not enter/await the profile-fetch stage when identity is not present, and continues to show SignInScreen for signed-out users. Ensure stage transitions stay consistent once identity becomes available after login."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add a Sign Out recovery action to the startup error screen for authentication-related profile loading failures, clearing Internet Identity state and returning to sign-in without refresh.",
-      "acceptanceCriteria": [
-        "If startup fails at 'Profile loading' with an authentication-related error, the error UI includes a \"Sign Out\" button in addition to retry/support.",
-        "Clicking \"Sign Out\" clears the Internet Identity session (calls the existing clear/logout flow) and the app returns to SignInScreen without requiring a manual refresh."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/StartupErrorScreen.tsx",
-          "operation": "modify",
-          "description": "Extend StartupErrorScreen to optionally render an English \"Sign Out\" CTA when the failure is authentication-related during profile loading, alongside existing Retry/Contact Support actions. Use the selected \"authorization\" component guidance about clearing cached application data on logout; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the StartupErrorScreen \"Sign Out\" action to the existing Internet Identity clear/logout flow and ensure React Query cached data (including currentUserProfile) is cleared so the UI returns to SignInScreen without a manual refresh."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Normalize authentication-related errors from the profile fetch path so startup reliably detects them as auth issues and shows the correct 'Profile loading' guidance and recovery UI.",
-      "acceptanceCriteria": [
-        "Authentication failures originating from getCallerUserProfile (e.g., backend traps containing \"Unauthorized\" / \"Authentication required\") are mapped to a consistent error message that triggers the authentication recovery UI.",
-        "Non-auth failures (timeouts, network errors) continue to show their appropriate messages and do not display the sign-out CTA unless the error is authentication-related."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/lib/authErrors.ts",
-          "operation": "create",
-          "description": "Create a small shared utility to detect authentication-related failures (e.g., matching \"Unauthorized\", \"Authentication required\", and common backend trap text) and to support consistent classification across hooks and startup UI logic."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Use the new auth error utility to normalize getCallerUserProfile failures so authentication-related errors are consistently identified (without being collapsed into a generic \"Failed to load profile\" message), while preserving distinct handling for timeouts/network errors."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Update profile-fetch startup error mapping to rely on the shared auth error utility, ensuring authentication issues produce the specific authentication guidance message and trigger the authentication recovery UI, while non-auth errors keep their appropriate messages."
-        },
-        {
-          "path": "frontend/src/components/StartupErrorScreen.tsx",
-          "operation": "modify",
-          "description": "Use the shared auth error utility (or a passed-in boolean) to decide when to show authentication-specific guidance and the \"Sign Out\" CTA only for authentication-related failures, keeping other error types on the existing retry/support pattern."
+          "description": "Strengthen sidebar nav button visual treatment by updating sidebar color tokens (e.g., --sidebar-nav / --sidebar-accent as needed) and expanding the .sidebar-nav-button component styles to enforce fully opaque backgrounds and consistent border/hover/focus/active states in both light and dark mode (including active styling via data-active/aria-current), ensuring underlying content is never visible through the buttons."
         }
       ]
     }

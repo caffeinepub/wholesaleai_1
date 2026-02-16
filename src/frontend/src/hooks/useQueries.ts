@@ -57,7 +57,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: 
 
 // User Profile
 export function useGetCallerUserProfile() {
-  const { actor, actorReady } = useBackendActor();
+  const { actor, actorReady, isLoading: actorFetching } = useBackendActor();
   const { identity } = useInternetIdentity();
 
   // Only fetch profile when authenticated (not anonymous)
@@ -90,8 +90,12 @@ export function useGetCallerUserProfile() {
           throw new Error('Profile loading timed out. Please check your connection and try again.');
         }
         
+        // CRITICAL FIX: Treat first-time "Unauthorized" as recoverable "no profile yet" state
+        // This prevents escalating first-time user onboarding into auth-recovery
         if (errorMsg.includes('Unauthorized') || errorMsg.includes('Authentication required')) {
-          throw new Error('Authentication required. Please sign out and sign in again.');
+          // First-time users may not have #user permission yet
+          // Return null to trigger profile setup flow instead of error
+          return null;
         }
         
         // For other errors, preserve the message
@@ -112,11 +116,13 @@ export function useGetCallerUserProfile() {
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
+  // CRITICAL FIX: Align loading/fetched semantics with authorization component guidance
+  // to prevent onboarding modal flash (actor dependency-aware loading/fetched)
   return {
     ...query,
-    // Return proper loading state that accounts for authentication
-    isLoading: isAuthenticated ? query.isLoading : false,
-    isFetched: isAuthenticated ? query.isFetched : false,
+    // Return proper loading state that accounts for actor dependency
+    isLoading: actorFetching || query.isLoading,
+    isFetched: !!actor && query.isFetched,
   };
 }
 
@@ -654,15 +660,7 @@ export function useUpdateMembershipPricing() {
       enterprise: MembershipPricing;
     }) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      try {
-        return await actor.updateMembershipPricing(
-          params.basic,
-          params.pro,
-          params.enterprise
-        );
-      } catch (error: any) {
-        throw normalizeError(error);
-      }
+      return await actor.updateMembershipPricing(params.basic, params.pro, params.enterprise);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['membershipCatalog'] });
@@ -677,11 +675,7 @@ export function useUpdateMembershipTier() {
   return useMutation({
     mutationFn: async (params: { userId: Principal; tier: MembershipTier }) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      try {
-        return await actor.updateMembershipTier(params.userId, params.tier);
-      } catch (error: any) {
-        throw normalizeError(error);
-      }
+      return await actor.updateMembershipTier(params.userId, params.tier);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
@@ -697,11 +691,7 @@ export function useIsStripeConfigured() {
     queryKey: ['isStripeConfigured'],
     queryFn: async () => {
       if (!actor) return false;
-      try {
-        return await actor.isStripeConfigured();
-      } catch (error: any) {
-        return false;
-      }
+      return await actor.isStripeConfigured();
     },
     enabled: actorReady,
   });
@@ -714,11 +704,7 @@ export function useSetStripeConfiguration() {
   return useMutation({
     mutationFn: async (config: StripeConfiguration) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      try {
-        return await actor.setStripeConfiguration(config);
-      } catch (error: any) {
-        throw normalizeError(error);
-      }
+      return await actor.setStripeConfiguration(config);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['isStripeConfigured'] });
@@ -736,15 +722,7 @@ export function useCreateCheckoutSession() {
       cancelUrl: string;
     }) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      try {
-        return await actor.createCheckoutSession(
-          params.items,
-          params.successUrl,
-          params.cancelUrl
-        );
-      } catch (error: any) {
-        throw normalizeError(error);
-      }
+      return await actor.createCheckoutSession(params.items, params.successUrl, params.cancelUrl);
     },
   });
 }
@@ -756,11 +734,7 @@ export function useConfirmMembershipPurchased() {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      try {
-        return await actor.confirmMembershipPurchased(sessionId);
-      } catch (error: any) {
-        throw normalizeError(error);
-      }
+      return await actor.confirmMembershipPurchased(sessionId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
@@ -774,28 +748,7 @@ export function useGetStripeSessionStatus() {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      try {
-        return await actor.getStripeSessionStatus(sessionId);
-      } catch (error: any) {
-        throw normalizeError(error);
-      }
+      return await actor.getStripeSessionStatus(sessionId);
     },
-  });
-}
-
-export function useGetPaymentSession(sessionId: string | null) {
-  const { actor, actorReady } = useBackendActor();
-
-  return useQuery<PaymentSession | null>({
-    queryKey: ['paymentSession', sessionId],
-    queryFn: async () => {
-      if (!actor || !sessionId) return null;
-      try {
-        return await actor.getPaymentSession(sessionId);
-      } catch (error: any) {
-        throw normalizeError(error);
-      }
-    },
-    enabled: actorReady && sessionId !== null,
   });
 }

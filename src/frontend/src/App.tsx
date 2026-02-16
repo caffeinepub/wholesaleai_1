@@ -46,6 +46,11 @@ export default function App() {
   const [startupError, setStartupError] = useState<StartupError | null>(null);
   const [currentStage, setCurrentStage] = useState<StartupStage>('identity-init');
 
+  // Set document title at runtime (single source of truth)
+  useEffect(() => {
+    document.title = 'Wholesale Lens';
+  }, []);
+
   // Update route on navigation changes (both popstate and hashchange)
   useEffect(() => {
     const updatePath = () => {
@@ -64,7 +69,7 @@ export default function App() {
   // Check if user is authenticated (not anonymous)
   const isAuthenticated = identity && !identity.getPrincipal().isAnonymous();
 
-  // Startup watchdog to prevent infinite loading
+  // Startup watchdog to prevent infinite loading (only for genuine hangs)
   useEffect(() => {
     if (!isAuthenticated) {
       setStartupError(null);
@@ -73,8 +78,9 @@ export default function App() {
     }
 
     const timer = setTimeout(() => {
-      // Only trigger timeout if we're still in a loading state
-      if (currentStage !== 'ready') {
+      // Only trigger timeout if we're still in a loading state AND not progressing
+      // Don't timeout during profile setup (that's a valid state)
+      if (currentStage !== 'ready' && currentStage !== 'profile-fetch') {
         setStartupError({
           stage: currentStage,
           message: 'The application is taking longer than expected to load. Please check your connection and try again.',
@@ -137,12 +143,14 @@ export default function App() {
     }
   }, [actorError, actorErrorObj]);
 
-  // Handle profile fetch errors
+  // Handle profile fetch errors with refined classification
   useEffect(() => {
     if (profileError && profileErrorObj) {
       const errorMsg = profileErrorObj.message || '';
       
-      // Classify the error type using the auth error utility
+      // CRITICAL FIX: Don't classify expected first-time onboarding states as hard failures
+      // The query now returns null for first-time users, so this should rarely trigger
+      // But if it does, handle it gracefully
       const isAuth = isAuthError(profileErrorObj);
       let message = 'Failed to load your profile. Please try again.';
       let technicalDetail = errorMsg;
@@ -151,6 +159,10 @@ export default function App() {
         message = 'Profile loading timed out. Please check your connection and try again.';
       } else if (isAuth) {
         message = 'Authentication error. Please sign out and sign in again.';
+        
+        // Automatically trigger sign-out recovery for auth errors
+        handleSignOutRecovery();
+        return; // Don't set error state, just recover
       } else if (errorMsg.includes('network') || errorMsg.includes('connection')) {
         message = 'Network error. Please check your connection and try again.';
       }
@@ -164,22 +176,54 @@ export default function App() {
     }
   }, [profileError, profileErrorObj]);
 
+  // Automatic sign-out recovery for auth errors
+  const handleSignOutRecovery = async () => {
+    try {
+      // Clear Internet Identity session
+      await clear();
+      // Clear all React Query cache
+      queryClient.clear();
+      // Clear error state
+      setStartupError(null);
+      // Reset to identity-init stage
+      setCurrentStage('identity-init');
+    } catch (error) {
+      console.error('Error during automatic sign-out recovery:', error);
+      // Even if sign out fails, clear local state
+      queryClient.clear();
+      setStartupError(null);
+      setCurrentStage('identity-init');
+    }
+  };
+
   // Handle retry based on error stage
-  const handleRetry = () => {
-    setStartupError(null);
-    
+  const handleRetry = async () => {
     if (!startupError) {
       // Generic retry - try actor first
       retryActor();
       return;
     }
 
+    // For auth errors, trigger sign-out recovery instead of retry
+    if (startupError.isAuthError) {
+      await handleSignOutRecovery();
+      return;
+    }
+
+    // Clear the error state before retrying
+    setStartupError(null);
+
     switch (startupError.stage) {
       case 'actor-init':
         retryActor();
         break;
       case 'profile-fetch':
-        retryProfile();
+        // Clear the stale profile query before retrying
+        queryClient.removeQueries({ queryKey: ['currentUserProfile'] });
+        // Small delay to ensure query is cleared
+        setTimeout(() => {
+          retryProfile();
+        }, 100);
         break;
       default:
         // For other stages, try actor refetch
@@ -189,19 +233,7 @@ export default function App() {
 
   // Handle sign out from error screen
   const handleSignOut = async () => {
-    try {
-      // Clear Internet Identity session
-      await clear();
-      // Clear all React Query cache
-      queryClient.clear();
-      // Clear error state
-      setStartupError(null);
-    } catch (error) {
-      console.error('Error during sign out:', error);
-      // Even if sign out fails, clear local state
-      queryClient.clear();
-      setStartupError(null);
-    }
+    await handleSignOutRecovery();
   };
 
   // Show error screen if we have a startup error
@@ -249,17 +281,16 @@ export default function App() {
     return <StartupLoadingScreen message="Loading your profile..." />;
   }
 
-  // If profile fetch failed with error, we already showed error screen above
-  // If we get here, profile fetch completed (either with data or null)
-  
-  // Show profile setup dialog if user doesn't have a profile yet (null or empty name)
-  // Only show after profile fetch is complete to avoid flash
-  const showProfileSetup = isAuthenticated && actorReady && profileFetched && userProfile === null;
+  // CRITICAL FIX: First-time profile absence routes deterministically to ProfileSetupDialog
+  // (without classifying it as an auth/startup failure)
+  // Use authorization component best practices for authenticated gating
+  const showProfileSetup = isAuthenticated && !profileLoading && profileFetched && userProfile === null;
 
-  return (
-    <>
-      <AppShell userProfile={userProfile ?? null} />
-      {showProfileSetup && <ProfileSetupDialog />}
-    </>
-  );
+  if (showProfileSetup) {
+    // Render ONLY the profile setup dialog, blocking all other UI
+    return <ProfileSetupDialog />;
+  }
+
+  // Profile is ready (not null), render the full app
+  return <AppShell userProfile={userProfile ?? null} />;
 }

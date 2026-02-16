@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-prevent-the-app-from-attempting-to-load-the-caller-profile-when-the-user-is-not-authenticated-so-signed-out-users-see-the-signinscreen-instead-of-a-startup-error-update-the-profile-query-gating-so-usegetcalleruserprofile-only-runs-when-an-authenticated-internet-identity-is-present-not-just-when-an-anonymous-actor-is-ready",
-      "featureTitle": "Prevent the app from attempting to load the caller profile when the user is not authenticated (so signed-out users see the SignInScreen instead of a startup error). Update the profile query gating so useGetCallerUserProfile only runs when an authenticated Internet Identity is present (not just when an anonymous actor is ready).",
+      "featureId": "feature-update-the-sidebar-navigation-item-boxes-all-sidebar-buttons-links-such-as-dashboard-contracts-admin-panel-contact-support-sign-out-so-they-render-as-clearly-filled-in-solid-color-buttons-with-improved-visual-polish-stronger-background-fill-clear-borders-and-consistent-hover-active-states-in-both-light-and-dark-mode-on-both-desktop-sidebar-and-the-mobile-sidebar-sheet",
+      "featureTitle": "Update the sidebar navigation item “boxes” (all sidebar buttons/links such as Dashboard, Contracts, Admin Panel, Contact Support, Sign Out) so they render as clearly filled-in, solid-color buttons with improved visual polish (stronger background fill, clear borders, and consistent hover/active states) in both light and dark mode, on both desktop sidebar and the mobile sidebar sheet.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/AppShell.tsx",
+        "frontend/src/index.css"
       ],
       "components": [
         "authorization@4.0.0",
@@ -21,54 +21,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-clear-recovery-path-on-the-startup-error-screen-for-authentication-related-profile-loading-failures-show-a-sign-out-action-that-clears-internet-identity-state-and-returns-the-user-to-the-sign-in-screen-use-english-for-all-user-facing-text",
-      "featureTitle": "Add a clear recovery path on the startup error screen for authentication-related profile loading failures: show a \"Sign Out\" action that clears Internet Identity state and returns the user to the sign-in screen. Use English for all user-facing text.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/StartupErrorScreen.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "stripe@3.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-normalize-authentication-related-errors-from-the-profile-fetch-path-so-they-are-consistently-detected-and-presented-as-an-authentication-issue-ensuring-the-startup-stage-shows-failed-at-profile-loading-with-the-authentication-guidance-and-not-a-generic-failed-to-load-profile-message",
-      "featureTitle": "Normalize authentication-related errors from the profile fetch path so they are consistently detected and presented as an authentication issue (ensuring the startup stage shows 'Failed at: Profile loading' with the authentication guidance, and not a generic 'Failed to load profile' message).",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/StartupErrorScreen.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/lib/authErrors.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "stripe@3.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

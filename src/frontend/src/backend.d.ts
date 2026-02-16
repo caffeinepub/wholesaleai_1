@@ -214,8 +214,10 @@ export interface backendInterface {
     getPaymentSession(sessionId: string): Promise<PaymentSession | null>;
     getStripeSessionStatus(sessionId: string): Promise<StripeSessionStatus>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    hasUserProfile(): Promise<boolean>;
     initializeProfile(): Promise<UserProfile>;
     isCallerAdmin(): Promise<boolean>;
+    isFirstTimeUser(): Promise<boolean>;
     isStripeConfigured(): Promise<boolean>;
     listBuyers(): Promise<Array<Buyer>>;
     listContractsByDeal(dealId: bigint): Promise<Array<ContractDocument>>;

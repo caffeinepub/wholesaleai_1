@@ -11,16 +11,18 @@ export function useBackendActor() {
   const { identity, isInitializing: identityInitializing } = useInternetIdentity();
   const queryClient = useQueryClient();
   
+  // Check if user is authenticated (identity exists AND principal is not anonymous)
+  const isAuthenticated = identity && !identity.getPrincipal().isAnonymous();
+  
   const actorQuery = useQuery<backendInterface>({
     queryKey: [ACTOR_QUERY_KEY, identity?.getPrincipal().toString()],
     queryFn: async () => {
-      const isAuthenticated = !!identity;
-
+      // If not authenticated (no identity or anonymous principal), return anonymous actor
       if (!isAuthenticated) {
-        // Return anonymous actor if not authenticated
         return await createActorWithConfig();
       }
 
+      // Create authenticated actor with identity
       const actorOptions = {
         agentOptions: {
           identity

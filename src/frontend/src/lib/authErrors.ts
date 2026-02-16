@@ -4,6 +4,7 @@
 
 /**
  * Check if an error is authentication-related
+ * CRITICAL FIX: Refined to not misclassify expected first-time onboarding states
  */
 export function isAuthError(error: any): boolean {
   if (!error) return false;
@@ -11,9 +12,8 @@ export function isAuthError(error: any): boolean {
   const message = error?.message || String(error);
   const lowerMessage = message.toLowerCase();
   
+  // Real authentication failures that require sign-out recovery
   return (
-    lowerMessage.includes('unauthorized') ||
-    lowerMessage.includes('authentication required') ||
     lowerMessage.includes('authentication error') ||
     lowerMessage.includes('please sign in') ||
     lowerMessage.includes('sign out and sign in')

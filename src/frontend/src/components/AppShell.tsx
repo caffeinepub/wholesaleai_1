@@ -145,7 +145,7 @@ export default function AppShell({ userProfile }: AppShellProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.key;
@@ -153,17 +153,22 @@ export default function AppShell({ userProfile }: AppShellProps) {
             <button
               key={item.key}
               onClick={() => handleNavClick(item.key)}
+              data-active={isActive}
+              aria-current={isActive ? 'page' : undefined}
               className={`
-                w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
-                transition-all duration-200 border
-                ${isActive 
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border shadow-sm' 
-                  : 'text-sidebar-foreground border-transparent hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground hover:border-sidebar-border/50'
+                sidebar-nav-button
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg
+                text-sm font-medium transition-all duration-200
+                border
+                ${
+                  isActive
+                    ? 'bg-[oklch(var(--sidebar-accent))] text-[oklch(var(--sidebar-accent-foreground))] border-[oklch(var(--sidebar-accent-foreground)/0.25)] shadow-md'
+                    : 'bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:border-[oklch(var(--sidebar-accent-foreground)/0.2)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
                 }
               `}
             >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span className="flex-1 text-left">{item.label}</span>
             </button>
           );
         })}
@@ -172,99 +177,107 @@ export default function AppShell({ userProfile }: AppShellProps) {
       <Separator className="bg-sidebar-border" />
 
       {/* User section */}
-      <div className="p-4 space-y-3 border-t border-sidebar-border">
+      <div className="p-4 space-y-2">
         {userProfile && (
-          <div className="px-3 py-2 space-y-1">
-            <p className="text-sm font-semibold text-sidebar-foreground truncate">
-              {userProfile.name}
-            </p>
-            <p className="text-xs text-sidebar-foreground/70 capitalize">
+          <div className="px-4 py-2 text-sm">
+            <p className="font-medium text-sidebar-foreground truncate">{userProfile.name}</p>
+            <p className="text-xs text-sidebar-foreground/60 capitalize">
               {userProfile.membershipTier.toLowerCase()} Member
             </p>
           </div>
         )}
 
-        <Button
+        <button
           onClick={() => handleNavClick('admin')}
-          variant="ghost"
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+          data-active={currentPage === 'admin'}
+          aria-current={currentPage === 'admin' ? 'page' : undefined}
+          className={`
+            sidebar-nav-button
+            w-full flex items-center gap-3 px-4 py-3 rounded-lg
+            text-sm font-medium transition-all duration-200
+            border
+            ${
+              currentPage === 'admin'
+                ? 'bg-[oklch(var(--sidebar-accent))] text-[oklch(var(--sidebar-accent-foreground))] border-[oklch(var(--sidebar-accent-foreground)/0.25)] shadow-md'
+                : 'bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:border-[oklch(var(--sidebar-accent-foreground)/0.2)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
+            }
+          `}
         >
-          <Settings className="mr-3 h-4 w-4" />
-          {COPY.nav.admin}
-        </Button>
+          <Settings className="h-5 w-5 flex-shrink-0" />
+          <span className="flex-1 text-left">Admin Panel</span>
+        </button>
 
-        <Button
+        <button
           onClick={handleContactSupport}
-          variant="ghost"
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+          className="sidebar-nav-button w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:border-[oklch(var(--sidebar-accent-foreground)/0.2)] hover:shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
         >
-          <Mail className="mr-3 h-4 w-4" />
-          {COPY.support.contactUs}
-        </Button>
+          <Mail className="h-5 w-5 flex-shrink-0" />
+          <span className="flex-1 text-left">Contact Support</span>
+        </button>
 
-        <Button
+        <button
           onClick={handleLogout}
-          variant="ghost"
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+          className="sidebar-nav-button w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border border-[oklch(var(--sidebar-border))] hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
         >
-          <LogOut className="mr-3 h-4 w-4" />
-          Logout
-        </Button>
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          <span className="flex-1 text-left">Sign Out</span>
+        </button>
       </div>
     </>
   );
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="fixed top-0 left-0 right-0 z-40 flex items-center gap-4 p-4 bg-background border-b border-border">
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <OpaqueSheetContent side="left" className="w-64 p-0">
-              <div className="flex flex-col h-full">
-                <SidebarContent />
-              </div>
-            </OpaqueSheetContent>
-          </Sheet>
-          <div className="flex items-center gap-2">
-            <img
-              src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
-              alt="Wholesale Lens"
-              className="h-8 w-8 object-contain"
-              width={32}
-              height={32}
-            />
-            <img
-              src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
-              alt="Wholesale Lens"
-              className="h-5 w-auto object-contain"
-              width={100}
-              height={20}
-            />
-          </div>
-        </div>
-      )}
-
+    <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
       {!isMobile && (
-        <aside 
-          className="w-64 shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background shadow-sidebar"
-        >
+        <aside className="w-64 flex-shrink-0 bg-sidebar border-r border-sidebar-border shadow-sidebar flex flex-col">
           <SidebarContent />
         </aside>
       )}
 
-      {/* Main content */}
-      <main className={`flex-1 overflow-y-auto min-w-0 ${isMobile ? 'pt-16' : ''}`}>
-        <AppShellErrorBoundary onReset={() => setCurrentPage('dashboard')}>
-          {renderPage()}
-        </AppShellErrorBoundary>
-      </main>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
+        {isMobile && (
+          <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
+                alt="Wholesale Lens"
+                className="h-8 w-8 object-contain"
+                width={32}
+                height={32}
+              />
+              <img
+                src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
+                alt="Wholesale Lens"
+                className="h-5 w-auto object-contain"
+                width={100}
+                height={20}
+              />
+            </div>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <OpaqueSheetContent side="left" className="w-64 p-0 bg-sidebar">
+                <div className="flex flex-col h-full">
+                  <SidebarContent />
+                </div>
+              </OpaqueSheetContent>
+            </Sheet>
+          </header>
+        )}
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto">
+          <AppShellErrorBoundary>
+            {renderPage()}
+          </AppShellErrorBoundary>
+        </main>
+      </div>
     </div>
   );
 }

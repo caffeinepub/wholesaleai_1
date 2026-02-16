@@ -6,6 +6,13 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
       colors: {
         border: "oklch(var(--border))",
@@ -25,14 +32,6 @@ export default {
           DEFAULT: "oklch(var(--destructive))",
           foreground: "oklch(var(--destructive-foreground))",
         },
-        success: {
-          DEFAULT: "oklch(var(--success))",
-          foreground: "oklch(var(--success-foreground))",
-        },
-        warning: {
-          DEFAULT: "oklch(var(--warning))",
-          foreground: "oklch(var(--warning-foreground))",
-        },
         muted: {
           DEFAULT: "oklch(var(--muted))",
           foreground: "oklch(var(--muted-foreground))",
@@ -50,14 +49,11 @@ export default {
           foreground: "oklch(var(--card-foreground))",
         },
         sidebar: {
-          DEFAULT: "oklch(var(--sidebar-background))",
+          DEFAULT: "oklch(var(--sidebar))",
           foreground: "oklch(var(--sidebar-foreground))",
-          primary: "oklch(var(--sidebar-primary))",
-          "primary-foreground": "oklch(var(--sidebar-primary-foreground))",
+          border: "oklch(var(--sidebar-border))",
           accent: "oklch(var(--sidebar-accent))",
           "accent-foreground": "oklch(var(--sidebar-accent-foreground))",
-          border: "oklch(var(--sidebar-border))",
-          ring: "oklch(var(--sidebar-ring))",
         },
         chart: {
           1: "oklch(var(--chart-1))",
@@ -65,6 +61,14 @@ export default {
           3: "oklch(var(--chart-3))",
           4: "oklch(var(--chart-4))",
           5: "oklch(var(--chart-5))",
+        },
+        success: {
+          DEFAULT: "oklch(var(--success))",
+          foreground: "oklch(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "oklch(var(--warning))",
+          foreground: "oklch(var(--warning-foreground))",
         },
       },
       borderRadius: {
@@ -74,26 +78,47 @@ export default {
       },
       fontFamily: {
         sans: [
-          'Inter',
-          'system-ui',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'Segoe UI',
-          'Roboto',
-          'sans-serif',
+          "Inter",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
         ],
         mono: [
-          'JetBrains Mono',
-          'Fira Code',
-          'Consolas',
-          'Monaco',
-          'monospace',
+          "JetBrains Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace",
         ],
       },
       boxShadow: {
-        'sidebar': '4px 0 12px -2px rgba(0, 0, 0, 0.4), 2px 0 6px -1px rgba(0, 0, 0, 0.3)',
+        sidebar: "2px 0 8px -2px oklch(0 0% 0% / 0.08), 4px 0 16px -4px oklch(0 0% 0% / 0.06)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
-}
+};
