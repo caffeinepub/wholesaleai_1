@@ -1,20 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, LogOut } from 'lucide-react';
 import { openSupportEmail } from '../lib/support';
 
 interface StartupErrorScreenProps {
   message: string;
   stage?: string;
   technicalDetail?: string;
+  isAuthError?: boolean;
   onRetry: () => void;
+  onSignOut: () => void;
 }
 
 export default function StartupErrorScreen({ 
   message, 
   stage, 
-  technicalDetail, 
-  onRetry 
+  technicalDetail,
+  isAuthError = false,
+  onRetry,
+  onSignOut,
 }: StartupErrorScreenProps) {
   const handleContactSupport = () => {
     const body = [
@@ -100,6 +104,19 @@ export default function StartupErrorScreen({
               <RefreshCw className="mr-2 h-4 w-4" />
               Retry
             </Button>
+            
+            {isAuthError && (
+              <Button 
+                onClick={onSignOut} 
+                variant="secondary" 
+                className="w-full"
+                size="lg"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            )}
+            
             <Button 
               onClick={handleContactSupport} 
               variant="outline" 

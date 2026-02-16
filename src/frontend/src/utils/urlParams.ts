@@ -33,9 +33,8 @@ export function getUrlParameter(paramName: string): string | null {
 }
 
 /**
- * Gets the current route path from the URL
- * Works with both hash-based routing (#/path) and browser routing (/path)
- *
+ * Gets the current route path from either hash-based or browser routing
+ * 
  * @returns The current route path (e.g., '/dashboard', '/payment-success')
  */
 export function getCurrentRoutePath(): string {
@@ -44,14 +43,14 @@ export function getCurrentRoutePath(): string {
     if (hash && hash.length > 1) {
         // Remove the leading #
         const hashContent = hash.substring(1);
-        // Split off any query parameters
+        // Remove query string if present
         const queryStartIndex = hashContent.indexOf('?');
         if (queryStartIndex !== -1) {
             return hashContent.substring(0, queryStartIndex);
         }
         return hashContent;
     }
-
+    
     // Fall back to browser routing
     return window.location.pathname;
 }

@@ -4,39 +4,31 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Profile still stuck on loading (profile loading behavior not fixed)."
+    "App unable to start due to authentication error during profile loading (prompts user to sign out and sign in again)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-eliminate-the-infinite-startup-loading-state-when-fetching-the-signed-in-user-s-profile-so-the-app-always-transitions-to-one-of-appshell-profilesetupdialog-or-startuperrorscreen",
-      "title": "Eliminate the infinite startup loading state when fetching the signed-in user's profile so the app always transitions to one of: AppShell, ProfileSetupDialog, or StartupErrorScreen.",
+      "id": "feature-prevent-the-app-from-attempting-to-load-the-caller-profile-when-the-user-is-not-authenticated-so-signed-out-users-see-the-signinscreen-instead-of-a-startup-error-update-the-profile-query-gating-so-usegetcalleruserprofile-only-runs-when-an-authenticated-internet-identity-is-present-not-just-when-an-anonymous-actor-is-ready",
+      "title": "Prevent the app from attempting to load the caller profile when the user is not authenticated (so signed-out users see the SignInScreen instead of a startup error). Update the profile query gating so useGetCallerUserProfile only runs when an authenticated Internet Identity is present (not just when an anonymous actor is ready).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-hard-timeout-to-the-profile-fetch-request-used-by-usegetcalleruserprofile-react-query-so-that-a-hung-canister-agent-call-results-in-a-surfaced-error-instead-of-a-permanent-loading-state",
-      "title": "Add a hard timeout to the profile fetch request used by useGetCallerUserProfile (React Query) so that a hung canister/agent call results in a surfaced error instead of a permanent loading state.",
+      "id": "feature-add-a-clear-recovery-path-on-the-startup-error-screen-for-authentication-related-profile-loading-failures-show-a-sign-out-action-that-clears-internet-identity-state-and-returns-the-user-to-the-sign-in-screen-use-english-for-all-user-facing-text",
+      "title": "Add a clear recovery path on the startup error screen for authentication-related profile loading failures: show a \"Sign Out\" action that clears Internet Identity state and returns the user to the sign-in screen. Use English for all user-facing text.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-startup-gating-logic-in-frontend-src-app-tsx-so-that-the-ui-does-not-block-forever-on-profileloading-if-the-profile-query-is-not-loading-but-is-also-not-fetched-due-to-being-disabled-cancelled-or-errored-the-user-should-see-an-actionable-error-state-rather-than-a-loading-spinner",
-      "title": "Update the startup gating logic in frontend/src/App.tsx so that the UI does not block forever on profileLoading; if the profile query is not loading but is also not fetched due to being disabled, cancelled, or errored, the user should see an actionable error state rather than a loading spinner.",
+      "id": "feature-normalize-authentication-related-errors-from-the-profile-fetch-path-so-they-are-consistently-detected-and-presented-as-an-authentication-issue-ensuring-the-startup-stage-shows-failed-at-profile-loading-with-the-authentication-guidance-and-not-a-generic-failed-to-load-profile-message",
+      "title": "Normalize authentication-related errors from the profile fetch path so they are consistently detected and presented as an authentication issue (ensuring the startup stage shows 'Failed at: Profile loading' with the authentication guidance, and not a generic 'Failed to load profile' message).",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-lightweight-diagnostic-details-for-the-profile-loading-stage-to-aid-support-debugging-without-exposing-secrets-e-g-show-current-startup-stage-and-a-short-technical-hint-only-on-the-error-screen",
-      "title": "Add lightweight diagnostic details for the profile-loading stage to aid support/debugging without exposing secrets (e.g., show current startup stage and a short technical hint only on the error screen).",
-      "reqIds": [
-        "REQ-4"
       ],
       "version": 1
     }

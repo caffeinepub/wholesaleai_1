@@ -1,92 +1,83 @@
 {
   "kind": "build_request",
-  "title": "Fix infinite 'Loading your profile' startup state",
+  "title": "Fix startup authentication error during profile loading",
   "projectName": "Wholesale Lens",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Eliminate the infinite startup loading state when fetching the signed-in user's profile so the app always transitions to one of: AppShell, ProfileSetupDialog, or StartupErrorScreen.",
+      "text": "Prevent the app from attempting to load the caller profile when the user is not authenticated (so signed-out users see the SignInScreen instead of a startup error). Update the profile query gating so useGetCallerUserProfile only runs when an authenticated Internet Identity is present (not just when an anonymous actor is ready).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "Nope still stuck on loading profile"
+          "Unable to Start\nAuthentication error. Please sign out and sign in again.\n\nFailed at: Profile loading\n\nThere was an authentication problem. Try signing out and signing in again."
         ]
       },
       "acceptanceCriteria": [
-        "After signing in, the app does not remain on the \"Loading your profile...\" screen indefinitely.",
-        "Within a bounded time (e.g., <= 30 seconds), the app transitions to either: the main app shell, the profile setup dialog (when profile is missing/empty), or an error screen with a working Retry button.",
-        "Retry from the error screen re-attempts the profile fetch without requiring a full page refresh."
+        "When the user is signed out (identity is undefined), the app does not call getCallerUserProfile and does not show the 'Unable to Start' error screen for profile loading; it shows SignInScreen.",
+        "After signing in, the profile query runs and the app proceeds to AppShell or ProfileSetupDialog (or shows an error only if the authenticated profile fetch genuinely fails)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a hard timeout to the profile fetch request used by useGetCallerUserProfile (React Query) so that a hung canister/agent call results in a surfaced error instead of a permanent loading state.",
+      "text": "Add a clear recovery path on the startup error screen for authentication-related profile loading failures: show a \"Sign Out\" action that clears Internet Identity state and returns the user to the sign-in screen. Use English for all user-facing text.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "Nope still stuck on loading profile"
+          "Authentication error. Please sign out and sign in again.",
+          "There was an authentication problem. Try signing out and signing in again."
         ]
       },
       "acceptanceCriteria": [
-        "If getCallerUserProfile does not resolve within the configured timeout window, the query transitions to an error state (not loading).",
-        "The error message shown to the user is in English and indicates the profile could not be loaded and they should retry.",
-        "The timeout behavior does not break the normal case where profiles load successfully."
+        "If startup fails at 'Profile loading' with an authentication-related error, the error UI includes a \"Sign Out\" button in addition to retry/support.",
+        "Clicking \"Sign Out\" clears the Internet Identity session (calls the existing clear/logout flow) and the app returns to SignInScreen without requiring a manual refresh."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update the startup gating logic in frontend/src/App.tsx so that the UI does not block forever on profileLoading; if the profile query is not loading but is also not fetched due to being disabled, cancelled, or errored, the user should see an actionable error state rather than a loading spinner.",
+      "text": "Normalize authentication-related errors from the profile fetch path so they are consistently detected and presented as an authentication issue (ensuring the startup stage shows 'Failed at: Profile loading' with the authentication guidance, and not a generic 'Failed to load profile' message).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-6"
         ],
         "quotes": [
-          "Nope still stuck on loading profile"
+          "Failed at: Profile loading",
+          "Authentication error. Please sign out and sign in again."
         ]
       },
       "acceptanceCriteria": [
-        "If the profile query is disabled/not running (e.g., actor not ready) the app shows the appropriate earlier stage (e.g., Connecting...) and does not show \"Loading your profile...\".",
-        "If the profile query errors (including timeout), the app shows StartupErrorScreen with a Retry action wired to re-run the profile query.",
-        "The app does not render ProfileSetupDialog until it has definitively determined the profile is missing (i.e., after a successful fetch returning null)."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add lightweight diagnostic details for the profile-loading stage to aid support/debugging without exposing secrets (e.g., show current startup stage and a short technical hint only on the error screen).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Nope still stuck on loading profile"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When a startup error occurs at the profile-fetch stage, the error screen includes enough context to distinguish a timeout vs. authorization vs. generic failure (in user-safe language).",
-        "No admin tokens, principals, or other secrets are displayed in the UI."
+        "Authentication failures originating from getCallerUserProfile (e.g., backend traps containing \"Unauthorized\" / \"Authentication required\") are mapped to a consistent error message that triggers the authentication recovery UI.",
+        "Non-auth failures (timeouts, network errors) continue to show their appropriate messages and do not display the sign-out CTA unless the error is authentication-related."
       ]
     }
   ],
   "constraints": [
-    "Do not edit any files under frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui (immutable paths).",
-    "Backend must remain single-actor; only introduce backend changes if strictly necessary to resolve the profile loading hang."
+    "Do not modify files under frontend/src/components/ui (read-only UI library components).",
+    "Do not modify immutable identity/actor hook files listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts and frontend/src/hooks/useActor.ts)."
   ],
   "nonGoals": [
-    "Adding new authentication providers (only Internet Identity is in scope).",
-    "Implementing real-time updates or WebSocket-based loading indicators.",
-    "Redesigning unrelated pages (deals, buyers, contracts, membership) beyond what is necessary to resolve the profile loading hang."
+    "Implementing a new authentication provider (only Internet Identity is used).",
+    "Changing backend authorization rules or access-control policy in the canister (unless strictly required to fix the reported startup issue)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

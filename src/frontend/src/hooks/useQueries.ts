@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBackendActor } from './useBackendActor';
+import { useInternetIdentity } from './useInternetIdentity';
 import type {
   UserProfile,
   Deal,
@@ -20,6 +21,7 @@ import type {
 } from '../backend';
 import { ExternalBlob } from '../backend';
 import { Principal } from '@dfinity/principal';
+import { isAuthError, isTimeoutError, getUserFriendlyErrorMessage } from '../lib/authErrors';
 
 // Profile fetch timeout in milliseconds
 const PROFILE_FETCH_TIMEOUT_MS = 15000; // 15 seconds
@@ -56,6 +58,10 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: 
 // User Profile
 export function useGetCallerUserProfile() {
   const { actor, actorReady } = useBackendActor();
+  const { identity } = useInternetIdentity();
+
+  // Only fetch profile when authenticated (not anonymous)
+  const isAuthenticated = identity && !identity.getPrincipal().isAnonymous();
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
@@ -77,7 +83,7 @@ export function useGetCallerUserProfile() {
         
         return profile;
       } catch (error: any) {
-        // Re-throw with clear error message
+        // Preserve the original error message for proper classification
         const errorMsg = error?.message || String(error);
         
         if (errorMsg.includes('timed out') || errorMsg.includes('timeout')) {
@@ -85,19 +91,18 @@ export function useGetCallerUserProfile() {
         }
         
         if (errorMsg.includes('Unauthorized') || errorMsg.includes('Authentication required')) {
-          throw new Error('Authentication required. Please sign in again.');
+          throw new Error('Authentication required. Please sign out and sign in again.');
         }
         
-        throw new Error('Failed to load profile. Please try again.');
+        // For other errors, preserve the message
+        throw error;
       }
     },
-    enabled: actorReady,
+    // Only enable when actor is ready AND user is authenticated
+    enabled: actorReady && isAuthenticated,
     retry: (failureCount, error) => {
       // Don't retry on authorization errors or timeouts
-      const errorMsg = error?.message || '';
-      if (errorMsg.includes('Unauthorized') || 
-          errorMsg.includes('Authentication required') ||
-          errorMsg.includes('timed out')) {
+      if (isAuthError(error) || isTimeoutError(error)) {
         return false;
       }
       // Retry network errors up to 2 times
@@ -107,7 +112,12 @@ export function useGetCallerUserProfile() {
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
-  return query;
+  return {
+    ...query,
+    // Return proper loading state that accounts for authentication
+    isLoading: isAuthenticated ? query.isLoading : false,
+    isFetched: isAuthenticated ? query.isFetched : false,
+  };
 }
 
 export function useInitializeProfile() {
@@ -644,7 +654,15 @@ export function useUpdateMembershipPricing() {
       enterprise: MembershipPricing;
     }) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      return await actor.updateMembershipPricing(params.basic, params.pro, params.enterprise);
+      try {
+        return await actor.updateMembershipPricing(
+          params.basic,
+          params.pro,
+          params.enterprise
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['membershipCatalog'] });
@@ -659,7 +677,11 @@ export function useUpdateMembershipTier() {
   return useMutation({
     mutationFn: async (params: { userId: Principal; tier: MembershipTier }) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      return await actor.updateMembershipTier(params.userId, params.tier);
+      try {
+        return await actor.updateMembershipTier(params.userId, params.tier);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
@@ -675,7 +697,11 @@ export function useIsStripeConfigured() {
     queryKey: ['isStripeConfigured'],
     queryFn: async () => {
       if (!actor) return false;
-      return await actor.isStripeConfigured();
+      try {
+        return await actor.isStripeConfigured();
+      } catch (error: any) {
+        return false;
+      }
     },
     enabled: actorReady,
   });
@@ -688,7 +714,11 @@ export function useSetStripeConfiguration() {
   return useMutation({
     mutationFn: async (config: StripeConfiguration) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      return await actor.setStripeConfiguration(config);
+      try {
+        return await actor.setStripeConfiguration(config);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['isStripeConfigured'] });
@@ -706,16 +736,15 @@ export function useCreateCheckoutSession() {
       cancelUrl: string;
     }) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      const result = await actor.createCheckoutSession(
-        params.items,
-        params.successUrl,
-        params.cancelUrl
-      );
-      const session = JSON.parse(result) as { id: string; url: string };
-      if (!session?.url) {
-        throw new Error('Stripe session missing url');
+      try {
+        return await actor.createCheckoutSession(
+          params.items,
+          params.successUrl,
+          params.cancelUrl
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
       }
-      return session;
     },
   });
 }
@@ -727,7 +756,11 @@ export function useConfirmMembershipPurchased() {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      return await actor.confirmMembershipPurchased(sessionId);
+      try {
+        return await actor.confirmMembershipPurchased(sessionId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
@@ -741,7 +774,11 @@ export function useGetStripeSessionStatus() {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       if (!actor) throw new Error('Backend not available. Please refresh the page.');
-      return await actor.getStripeSessionStatus(sessionId);
+      try {
+        return await actor.getStripeSessionStatus(sessionId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
   });
 }
@@ -753,7 +790,11 @@ export function useGetPaymentSession(sessionId: string | null) {
     queryKey: ['paymentSession', sessionId],
     queryFn: async () => {
       if (!actor || !sessionId) return null;
-      return await actor.getPaymentSession(sessionId);
+      try {
+        return await actor.getPaymentSession(sessionId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     enabled: actorReady && sessionId !== null,
   });

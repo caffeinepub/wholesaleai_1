@@ -1,6 +1,6 @@
 {
   "frontend/src/index.css": "Global styles with dark theme OKLCH color system featuring improved sidebar contrast (accent at 45 20% 18% vs background at 0 0% 6%), brighter accent foreground, and enhanced border separation for better visual distinction.",
-  "frontend/src/App.tsx": "Main application component with hardened startup state machine that guarantees terminal UI outcome (AppShell, ProfileSetupDialog, or StartupErrorScreen), properly handles actor initialization before profile fetch, and includes comprehensive error handling with retry functionality.",
+  "frontend/src/App.tsx": "Main application component with hardened startup state machine that properly gates profile loading to authenticated users only, uses auth error utilities for error classification, and provides sign-out recovery for authentication errors.",
   "frontend/src/components/SignInScreen.tsx": "Premium sign-in screen with Wholesale Lens branding, card-based layout, value proposition icons, and optimized image loading with explicit dimensions.",
   "frontend/src/components/ProfileSetupDialog.tsx": "Profile setup dialog using OpaqueDialogContent with proper form state management, disabled inputs during submission, clear error display, and automatic transition after successful save via query invalidation.",
   "frontend/src/components/AppShell.tsx": "Main application layout with responsive sidebar using improved navigation item styling with visible borders and enhanced hover states for better visual separation and contrast.",
@@ -10,8 +10,8 @@
   "frontend/src/pages/BuyersListPage.tsx": "Buyers list management page with Pro+ tier gating using FeatureLock with description, proper error handling with PageQueryErrorState, retry actions, and membership navigation for access errors.",
   "frontend/src/pages/ContractsPage.tsx": "Enterprise-only contracts page with FeatureLock description, explicit loading/error/empty states, inline error alerts with wrapped retry function, and conditional rendering based on deal selection.",
   "frontend/src/pages/AnalyticsPage.tsx": "Enterprise-only advanced analytics page with FeatureLock description, proper error handling using PageQueryErrorState, retry actions, and membership navigation for permission errors.",
-  "frontend/src/pages/MembershipPage.tsx": "Membership plans page with paid checkout flow using Stripe, billing period toggle (monthly/yearly), catalog pricing display with sale support, and checkout CTA that uses the already-parsed session response and redirects to Stripe payment page via window.location.href.",
-  "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations with hard 15-second timeout on profile fetch using Promise.race, proper retry logic for network errors, and normalized error messages for all mutations.",
+  "frontend/src/pages/MembershipPage.tsx": "Membership plans page with paid checkout flow using Stripe, billing period toggle (monthly/yearly), catalog pricing display with sale support, and checkout CTA that parses the JSON string response from backend and redirects to Stripe payment page via window.location.href.",
+  "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations with authentication-aware profile fetching that only runs when user is authenticated (not anonymous), proper error classification using auth error utilities, and normalized error messages.",
   "frontend/src/components/AnalysisResultCard.tsx": "Card component displaying comprehensive deal analysis results including ARV, MAO, comps, and deal rating.",
   "frontend/src/components/DealCard.tsx": "Compact deal card component showing key deal information with edit action.",
   "frontend/src/components/DealEditorDialog.tsx": "Deal editor dialog using OpaqueDialogContent and OpaqueSelectContent for stage/buyer selection, supporting create/edit/delete operations with all deal fields and proper validation.",
@@ -27,7 +27,7 @@
   "frontend/src/lib/dealMath.ts": "Shared calculation functions for MAO, estimated profit, and assignment fees.",
   "frontend/src/components/StartupLoadingScreen.tsx": "Branded opening screen component featuring Wholesale Lens logo, wordmark, background illustration, loading spinner with optimized image loading and improved typography.",
   "frontend/index.html": "HTML entry point with updated document title \"Wholesale Lens\".",
-  "frontend/src/components/StartupErrorScreen.tsx": "Full-screen startup error component displaying user-readable error messages with optional stage label and diagnostic hints (timeout/auth/network classification), retry button, and contact support action without exposing secrets.",
+  "frontend/src/components/StartupErrorScreen.tsx": "Full-screen startup error component with authentication-specific recovery UI including a \"Sign Out\" button for auth errors, alongside retry and contact support actions.",
   "frontend/src/hooks/useBackendActor.ts": "Safe actor initialization hook that exposes actorReady, isLoading, and error states for proper query gating, with retry support and non-blocking admin initialization.",
   "frontend/src/lib/money.ts": "Utility functions for formatting bigint cents to USD strings and parsing USD strings to bigint cents for membership pricing display and input.",
   "frontend/src/components/AccessDeniedScreen.tsx": "Reusable access denied component displaying a shield alert icon, error message, and optional back button for admin-gated views.",
@@ -40,5 +40,6 @@
   "frontend/src/hooks/useMediaQuery.ts": "Custom React hook for detecting media query matches with window resize listener, includes convenience hook useIsMobile for detecting screens under 768px width.",
   "frontend/src/components/AppShellErrorBoundary.tsx": "React error boundary component that catches rendering errors in page components and displays a user-friendly fallback UI with a reset button to return to the dashboard.",
   "frontend/src/utils/urlParams.ts": "URL parameter utilities supporting both hash-based and browser routing, with functions for extracting parameters, managing session storage, handling secrets securely, and the getCurrentRoutePath function for route detection.",
-  "frontend/src/components/OpaqueOverlays.tsx": "Wrapper components for shadcn/ui overlay primitives (Dialog, Sheet, Select) that enforce fully opaque backgrounds without blur effects using className overrides and sibling selectors, without importing unexported internal components."
+  "frontend/src/components/OpaqueOverlays.tsx": "Wrapper components for shadcn/ui overlay primitives (Dialog, Sheet, Select) that enforce fully opaque backgrounds without blur effects using className overrides and sibling selectors, without importing unexported internal components.",
+  "frontend/src/lib/authErrors.ts": "Utility functions for detecting and classifying authentication, timeout, and network errors with user-friendly message generation."
 }

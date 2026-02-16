@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-eliminate-the-infinite-startup-loading-state-when-fetching-the-signed-in-user-s-profile-so-the-app-always-transitions-to-one-of-appshell-profilesetupdialog-or-startuperrorscreen",
-      "featureTitle": "Eliminate the infinite startup loading state when fetching the signed-in user's profile so the app always transitions to one of: AppShell, ProfileSetupDialog, or StartupErrorScreen.",
+      "featureId": "feature-prevent-the-app-from-attempting-to-load-the-caller-profile-when-the-user-is-not-authenticated-so-signed-out-users-see-the-signinscreen-instead-of-a-startup-error-update-the-profile-query-gating-so-usegetcalleruserprofile-only-runs-when-an-authenticated-internet-identity-is-present-not-just-when-an-anonymous-actor-is-ready",
+      "featureTitle": "Prevent the app from attempting to load the caller profile when the user is not authenticated (so signed-out users see the SignInScreen instead of a startup error). Update the profile query gating so useGetCallerUserProfile only runs when an authenticated Internet Identity is present (not just when an anonymous actor is ready).",
       "files": [
         "frontend/src/App.tsx",
         "frontend/src/hooks/useQueries.ts"
@@ -25,10 +25,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-hard-timeout-to-the-profile-fetch-request-used-by-usegetcalleruserprofile-react-query-so-that-a-hung-canister-agent-call-results-in-a-surfaced-error-instead-of-a-permanent-loading-state",
-      "featureTitle": "Add a hard timeout to the profile fetch request used by useGetCallerUserProfile (React Query) so that a hung canister/agent call results in a surfaced error instead of a permanent loading state.",
+      "featureId": "feature-add-a-clear-recovery-path-on-the-startup-error-screen-for-authentication-related-profile-loading-failures-show-a-sign-out-action-that-clears-internet-identity-state-and-returns-the-user-to-the-sign-in-screen-use-english-for-all-user-facing-text",
+      "featureTitle": "Add a clear recovery path on the startup error screen for authentication-related profile loading failures: show a \"Sign Out\" action that clears Internet Identity state and returns the user to the sign-in screen. Use English for all user-facing text.",
       "files": [
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/components/StartupErrorScreen.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -47,10 +48,13 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-startup-gating-logic-in-frontend-src-app-tsx-so-that-the-ui-does-not-block-forever-on-profileloading-if-the-profile-query-is-not-loading-but-is-also-not-fetched-due-to-being-disabled-cancelled-or-errored-the-user-should-see-an-actionable-error-state-rather-than-a-loading-spinner",
-      "featureTitle": "Update the startup gating logic in frontend/src/App.tsx so that the UI does not block forever on profileLoading; if the profile query is not loading but is also not fetched due to being disabled, cancelled, or errored, the user should see an actionable error state rather than a loading spinner.",
+      "featureId": "feature-normalize-authentication-related-errors-from-the-profile-fetch-path-so-they-are-consistently-detected-and-presented-as-an-authentication-issue-ensuring-the-startup-stage-shows-failed-at-profile-loading-with-the-authentication-guidance-and-not-a-generic-failed-to-load-profile-message",
+      "featureTitle": "Normalize authentication-related errors from the profile fetch path so they are consistently detected and presented as an authentication issue (ensuring the startup stage shows 'Failed at: Profile loading' with the authentication guidance, and not a generic 'Failed to load profile' message).",
       "files": [
-        "frontend/src/App.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/StartupErrorScreen.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/lib/authErrors.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -65,29 +69,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-lightweight-diagnostic-details-for-the-profile-loading-stage-to-aid-support-debugging-without-exposing-secrets-e-g-show-current-startup-stage-and-a-short-technical-hint-only-on-the-error-screen",
-      "featureTitle": "Add lightweight diagnostic details for the profile-loading stage to aid support/debugging without exposing secrets (e.g., show current startup stage and a short technical hint only on the error screen).",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/StartupErrorScreen.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "stripe@3.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }

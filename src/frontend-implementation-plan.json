@@ -1,78 +1,75 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix infinite 'Loading your profile' startup state (bounded startup + actionable errors)",
+  "title": "Fix startup auth gating and recovery for profile loading",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Ensure startup never stays indefinitely in \"Loading your profile...\" and always transitions to AppShell, ProfileSetupDialog, or StartupErrorScreen with working Retry.",
+      "summary": "Gate caller profile loading so it only runs when an authenticated Internet Identity is present, preventing signed-out startup auth errors and showing SignInScreen instead.",
       "acceptanceCriteria": [
-        "After signing in, the app does not remain on the \"Loading your profile...\" screen indefinitely.",
-        "Within a bounded time (e.g., <= 30 seconds), the app transitions to either: the main app shell, the profile setup dialog (when profile is missing/empty), or an error screen with a working Retry button.",
-        "Retry from the error screen re-attempts the profile fetch without requiring a full page refresh."
+        "When the user is signed out (identity is undefined), the app does not call getCallerUserProfile and does not show the 'Unable to Start' error screen for profile loading; it shows SignInScreen.",
+        "After signing in, the profile query runs and the app proceeds to AppShell or ProfileSetupDialog (or shows an error only if the authenticated profile fetch genuinely fails)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Harden startup state machine to guarantee a terminal UI outcome: keep \"Loading your profile...\" only for active profile-fetch; if the profile query is stuck/never started/never reaches fetched state, transition to StartupErrorScreen with Retry wired to re-run the profile query. Ensure ProfileSetupDialog only appears after a successful fetch returns null. Verify the component's usage instructions before implementing."
-        },
-        {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Adjust useGetCallerUserProfile to explicitly support bounded completion (success, null, or error) so App.tsx can always progress; align query status flags with the authorization component guidance for actor dependency and fetched-state semantics. Verify the component's usage instructions before implementing."
+          "description": "Update useGetCallerUserProfile to only enable the React Query fetch when an authenticated Internet Identity is present (not merely when an anonymous actor is ready). Use the selected \"authorization\" component guidance to ensure the app requires login before accessing user profile data; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Adjust startup stage logic so the app does not enter/await the profile-fetch stage when identity is not present, and continues to show SignInScreen for signed-out users. Ensure stage transitions stay consistent once identity becomes available after login."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add a hard timeout to the useGetCallerUserProfile React Query request so hung backend calls surface an error instead of permanent loading.",
+      "summary": "Add a Sign Out recovery action to the startup error screen for authentication-related profile loading failures, clearing Internet Identity state and returning to sign-in without refresh.",
       "acceptanceCriteria": [
-        "If getCallerUserProfile does not resolve within the configured timeout window, the query transitions to an error state (not loading).",
-        "The error message shown to the user is in English and indicates the profile could not be loaded and they should retry.",
-        "The timeout behavior does not break the normal case where profiles load successfully."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Wrap the actor.getCallerUserProfile() call with a Promise-based hard timeout (e.g., Promise.race) so a hung call rejects with a clear English timeout error advising the user to retry; ensure normal successful fetches remain unaffected and that retry behavior remains safe. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Update App.tsx startup gating so disabled/cancelled/errored profile queries never present as an infinite loading spinner and errors show StartupErrorScreen with Retry wired to refetch.",
-      "acceptanceCriteria": [
-        "If the profile query is disabled/not running (e.g., actor not ready) the app shows the appropriate earlier stage (e.g., Connecting...) and does not show \"Loading your profile...\".",
-        "If the profile query errors (including timeout), the app shows StartupErrorScreen with a Retry action wired to re-run the profile query.",
-        "The app does not render ProfileSetupDialog until it has definitively determined the profile is missing (i.e., after a successful fetch returning null)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Refactor startup gating to distinguish: (1) actor not ready => Connecting stage; (2) profile query actively loading => \"Loading your profile...\"; (3) profile error (including timeout/unauthorized/generic) => StartupErrorScreen with Retry calling profile refetch; (4) profile fetched => AppShell and optionally ProfileSetupDialog only when userProfile is definitively null. Ensure any 'not running' / not-fetched-yet states do not render the profile loading spinner indefinitely. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Add lightweight, user-safe diagnostics on the startup error screen for profile-loading failures (stage + hint) without exposing secrets.",
-      "acceptanceCriteria": [
-        "When a startup error occurs at the profile-fetch stage, the error screen includes enough context to distinguish a timeout vs. authorization vs. generic failure (in user-safe language).",
-        "No admin tokens, principals, or other secrets are displayed in the UI."
+        "If startup fails at 'Profile loading' with an authentication-related error, the error UI includes a \"Sign Out\" button in addition to retry/support.",
+        "Clicking \"Sign Out\" clears the Internet Identity session (calls the existing clear/logout flow) and the app returns to SignInScreen without requiring a manual refresh."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/StartupErrorScreen.tsx",
           "operation": "modify",
-          "description": "Extend StartupErrorScreen to optionally render user-safe diagnostic context (e.g., current startup stage label and a short technical hint string) only when provided; keep diagnostics free of secrets (no principals, tokens, raw URLs with secrets). Verify the component's usage instructions before implementing."
+          "description": "Extend StartupErrorScreen to optionally render an English \"Sign Out\" CTA when the failure is authentication-related during profile loading, alongside existing Retry/Contact Support actions. Use the selected \"authorization\" component guidance about clearing cached application data on logout; verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Populate StartupErrorScreen with lightweight diagnostic fields for profile-fetch failures that clearly differentiate timeout vs authorization vs generic error in safe language (e.g., classify based on error message patterns), and ensure Retry triggers a new profile fetch attempt without full page refresh. Verify the component's usage instructions before implementing."
+          "description": "Wire the StartupErrorScreen \"Sign Out\" action to the existing Internet Identity clear/logout flow and ensure React Query cached data (including currentUserProfile) is cleared so the UI returns to SignInScreen without a manual refresh."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Normalize authentication-related errors from the profile fetch path so startup reliably detects them as auth issues and shows the correct 'Profile loading' guidance and recovery UI.",
+      "acceptanceCriteria": [
+        "Authentication failures originating from getCallerUserProfile (e.g., backend traps containing \"Unauthorized\" / \"Authentication required\") are mapped to a consistent error message that triggers the authentication recovery UI.",
+        "Non-auth failures (timeouts, network errors) continue to show their appropriate messages and do not display the sign-out CTA unless the error is authentication-related."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/authErrors.ts",
+          "operation": "create",
+          "description": "Create a small shared utility to detect authentication-related failures (e.g., matching \"Unauthorized\", \"Authentication required\", and common backend trap text) and to support consistent classification across hooks and startup UI logic."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Use the new auth error utility to normalize getCallerUserProfile failures so authentication-related errors are consistently identified (without being collapsed into a generic \"Failed to load profile\" message), while preserving distinct handling for timeouts/network errors."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update profile-fetch startup error mapping to rely on the shared auth error utility, ensuring authentication issues produce the specific authentication guidance message and trigger the authentication recovery UI, while non-auth errors keep their appropriate messages."
+        },
+        {
+          "path": "frontend/src/components/StartupErrorScreen.tsx",
+          "operation": "modify",
+          "description": "Use the shared auth error utility (or a passed-in boolean) to decide when to show authentication-specific guidance and the \"Sign Out\" CTA only for authentication-related failures, keeping other error types on the existing retry/support pattern."
         }
       ]
     }

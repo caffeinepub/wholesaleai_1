@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useQueries';
 import { useBackendActor } from './hooks/useBackendActor';
@@ -10,6 +11,7 @@ import StartupErrorScreen from './components/StartupErrorScreen';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentFailurePage from './pages/PaymentFailurePage';
 import { getCurrentRoutePath } from './utils/urlParams';
+import { isAuthError } from './lib/authErrors';
 
 const STARTUP_TIMEOUT_MS = 30000; // 30 seconds
 
@@ -24,10 +26,12 @@ type StartupError = {
   stage: StartupStage;
   message: string;
   technicalDetail?: string;
+  isAuthError?: boolean;
 };
 
 export default function App() {
-  const { identity, isInitializing: identityInitializing } = useInternetIdentity();
+  const queryClient = useQueryClient();
+  const { identity, isInitializing: identityInitializing, clear } = useInternetIdentity();
   const { actorReady, isLoading: actorLoading, isError: actorError, error: actorErrorObj, refetch: retryActor } = useBackendActor();
   const {
     data: userProfile,
@@ -57,9 +61,12 @@ export default function App() {
     };
   }, []);
 
+  // Check if user is authenticated (not anonymous)
+  const isAuthenticated = identity && !identity.getPrincipal().isAnonymous();
+
   // Startup watchdog to prevent infinite loading
   useEffect(() => {
-    if (!identity) {
+    if (!isAuthenticated) {
       setStartupError(null);
       setCurrentStage('identity-init');
       return;
@@ -77,7 +84,7 @@ export default function App() {
     }, STARTUP_TIMEOUT_MS);
 
     return () => clearTimeout(timer);
-  }, [identity, currentStage]);
+  }, [isAuthenticated, currentStage]);
 
   // Track startup stages with improved logic
   useEffect(() => {
@@ -86,12 +93,12 @@ export default function App() {
       return;
     }
     
-    if (!identity) {
+    if (!isAuthenticated) {
       setCurrentStage('identity-init');
       return;
     }
     
-    // Identity is ready, check actor
+    // Identity is ready and authenticated, check actor
     if (actorLoading || !actorReady) {
       setCurrentStage('actor-init');
       return;
@@ -117,7 +124,7 @@ export default function App() {
     
     // Profile query hasn't started yet (shouldn't happen with actorReady, but handle it)
     setCurrentStage('route-check');
-  }, [identityInitializing, identity, actorLoading, actorReady, profileLoading, profileFetched, profileError, currentPath]);
+  }, [identityInitializing, isAuthenticated, actorLoading, actorReady, profileLoading, profileFetched, profileError, currentPath]);
 
   // Handle actor initialization errors
   useEffect(() => {
@@ -135,13 +142,14 @@ export default function App() {
     if (profileError && profileErrorObj) {
       const errorMsg = profileErrorObj.message || '';
       
-      // Classify the error type
+      // Classify the error type using the auth error utility
+      const isAuth = isAuthError(profileErrorObj);
       let message = 'Failed to load your profile. Please try again.';
       let technicalDetail = errorMsg;
       
       if (errorMsg.includes('timed out') || errorMsg.includes('timeout')) {
         message = 'Profile loading timed out. Please check your connection and try again.';
-      } else if (errorMsg.includes('Unauthorized') || errorMsg.includes('Authentication')) {
+      } else if (isAuth) {
         message = 'Authentication error. Please sign out and sign in again.';
       } else if (errorMsg.includes('network') || errorMsg.includes('connection')) {
         message = 'Network error. Please check your connection and try again.';
@@ -151,15 +159,10 @@ export default function App() {
         stage: 'profile-fetch',
         message,
         technicalDetail,
+        isAuthError: isAuth,
       });
     }
   }, [profileError, profileErrorObj]);
-
-  const isAuthenticated = !!identity;
-
-  // Check if we're on a payment result page
-  const isPaymentSuccessPage = currentPath === '/payment-success';
-  const isPaymentFailurePage = currentPath === '/payment-failure';
 
   // Handle retry based on error stage
   const handleRetry = () => {
@@ -184,6 +187,23 @@ export default function App() {
     }
   };
 
+  // Handle sign out from error screen
+  const handleSignOut = async () => {
+    try {
+      // Clear Internet Identity session
+      await clear();
+      // Clear all React Query cache
+      queryClient.clear();
+      // Clear error state
+      setStartupError(null);
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      // Even if sign out fails, clear local state
+      queryClient.clear();
+      setStartupError(null);
+    }
+  };
+
   // Show error screen if we have a startup error
   if (startupError) {
     return (
@@ -191,7 +211,9 @@ export default function App() {
         message={startupError.message}
         stage={startupError.stage}
         technicalDetail={startupError.technicalDetail}
+        isAuthError={startupError.isAuthError}
         onRetry={handleRetry}
+        onSignOut={handleSignOut}
       />
     );
   }
@@ -212,12 +234,12 @@ export default function App() {
   }
 
   // Handle payment result pages (must be authenticated and actor ready)
-  if (isPaymentSuccessPage || isPaymentFailurePage) {
-    if (isPaymentSuccessPage) {
+  if (currentPath === '/payment-success' || currentPath === '/payment-failure') {
+    if (currentPath === '/payment-success') {
       return <PaymentSuccessPage />;
     }
     
-    if (isPaymentFailurePage) {
+    if (currentPath === '/payment-failure') {
       return <PaymentFailurePage />;
     }
   }

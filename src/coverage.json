@@ -1,61 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T21:07:31.599Z",
+  "generatedAt": "2026-02-16T21:18:38.796Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Eliminate the infinite startup loading state when fetching the signed-in user's profile so the app always transitions to one of: AppShell, ProfileSetupDialog, or StartupErrorScreen.",
+        "summary": "Prevent the app from attempting to load the caller profile when the user is not authenticated (so signed-out users see the SignInScreen instead of a startup error). Update the profile query gating so useGetCallerUserProfile only runs when an authenticated Internet Identity is present (not just when an anonymous actor is ready).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add a hard timeout to the profile fetch request used by useGetCallerUserProfile (React Query) so that a hung canister/agent call results in a surfaced error instead of a permanent loading state.",
+        "summary": "Add a clear recovery path on the startup error screen for authentication-related profile loading failures: show a \"Sign Out\" action that clears Internet Identity state and returns the user to the sign-in screen. Use English for all user-facing text.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/StartupErrorScreen.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/StartupErrorScreen.tsx",
+          "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Update the startup gating logic in frontend/src/App.tsx so that the UI does not block forever on profileLoading; if the profile query is not loading but is also not fetched due to being disabled, cancelled, or errored, the user should see an actionable error state rather than a loading spinner.",
+        "summary": "Normalize authentication-related errors from the profile fetch path so they are consistently detected and presented as an authentication issue (ensuring the startup stage shows 'Failed at: Profile loading' with the authentication guidance, and not a generic 'Failed to load profile' message).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/lib/authErrors.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/StartupErrorScreen.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add lightweight diagnostic details for the profile-loading stage to aid support/debugging without exposing secrets (e.g., show current startup stage and a short technical hint only on the error screen).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/StartupErrorScreen.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/StartupErrorScreen.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/lib/authErrors.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/StartupErrorScreen.tsx"
         ]
       }
     ]
@@ -68,6 +63,7 @@
     "frontend/src/App.tsx",
     "frontend/src/components/StartupErrorScreen.tsx",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/authErrors.ts",
     "frontend/src/pages/MembershipPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",

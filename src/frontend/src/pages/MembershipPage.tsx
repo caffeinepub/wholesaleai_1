@@ -67,12 +67,15 @@ export default function MembershipPage() {
       const successUrl = `${baseUrl}/payment-success`;
       const cancelUrl = `${baseUrl}/payment-cancel`;
 
-      // The mutation already returns the parsed session object
-      const session = await createCheckoutSession.mutateAsync({
+      // The backend returns a JSON string, so we need to parse it
+      const sessionJson = await createCheckoutSession.mutateAsync({
         items,
         successUrl,
         cancelUrl,
       });
+
+      // Parse the JSON string to get the session object
+      const session = JSON.parse(sessionJson) as CheckoutSession;
 
       if (!session?.url) {
         throw new Error('Stripe session missing url');
