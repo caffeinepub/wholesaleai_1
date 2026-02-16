@@ -26,6 +26,7 @@ type StartupError = {
   stage: StartupStage;
   message: string;
   technicalDetail?: string;
+  errorType?: 'timeout' | 'network' | 'auth' | 'unexpected';
   isAuthError?: boolean;
 };
 
@@ -85,6 +86,7 @@ export default function App() {
           stage: currentStage,
           message: 'The application is taking longer than expected to load. Please check your connection and try again.',
           technicalDetail: `Timeout at stage: ${currentStage}`,
+          errorType: 'timeout',
         });
       }
     }, STARTUP_TIMEOUT_MS);
@@ -135,10 +137,12 @@ export default function App() {
   // Handle actor initialization errors
   useEffect(() => {
     if (actorError && actorErrorObj) {
+      const errorMsg = actorErrorObj.message || '';
       setStartupError({
         stage: 'actor-init',
         message: 'Failed to connect to the backend. Please check your connection and try again.',
-        technicalDetail: actorErrorObj.message,
+        technicalDetail: errorMsg,
+        errorType: errorMsg.includes('network') || errorMsg.includes('connection') ? 'network' : 'unexpected',
       });
     }
   }, [actorError, actorErrorObj]);
@@ -147,31 +151,40 @@ export default function App() {
   useEffect(() => {
     if (profileError && profileErrorObj) {
       const errorMsg = profileErrorObj.message || '';
+      const errorType = (profileErrorObj as any).errorType || 'unexpected';
       
-      // CRITICAL FIX: Don't classify expected first-time onboarding states as hard failures
-      // The query now returns null for first-time users, so this should rarely trigger
-      // But if it does, handle it gracefully
+      // Log the error for developer debugging
+      console.error('Profile loading error:', profileErrorObj);
+      
+      // Check if this is an auth error that requires sign-out recovery
       const isAuth = isAuthError(profileErrorObj);
-      let message = 'Failed to load your profile. Please try again.';
-      let technicalDetail = errorMsg;
       
-      if (errorMsg.includes('timed out') || errorMsg.includes('timeout')) {
-        message = 'Profile loading timed out. Please check your connection and try again.';
-      } else if (isAuth) {
-        message = 'Authentication error. Please sign out and sign in again.';
-        
+      if (isAuth) {
         // Automatically trigger sign-out recovery for auth errors
         handleSignOutRecovery();
         return; // Don't set error state, just recover
-      } else if (errorMsg.includes('network') || errorMsg.includes('connection')) {
+      }
+      
+      // For non-auth errors, show the error screen with diagnostics
+      let message = 'Failed to load your profile. Please try again.';
+      let technicalDetail = errorMsg;
+      
+      if (errorType === 'timeout') {
+        message = 'Profile loading timed out. Please check your connection and try again.';
+        technicalDetail = `Timeout: ${errorMsg}`;
+      } else if (errorType === 'network') {
         message = 'Network error. Please check your connection and try again.';
+        technicalDetail = `Network: ${errorMsg}`;
+      } else if (errorType === 'unexpected') {
+        technicalDetail = `Unexpected: ${errorMsg}`;
       }
       
       setStartupError({
         stage: 'profile-fetch',
         message,
         technicalDetail,
-        isAuthError: isAuth,
+        errorType,
+        isAuthError: false,
       });
     }
   }, [profileError, profileErrorObj]);
@@ -179,6 +192,7 @@ export default function App() {
   // Automatic sign-out recovery for auth errors
   const handleSignOutRecovery = async () => {
     try {
+      console.log('Triggering automatic sign-out recovery for auth error');
       // Clear Internet Identity session
       await clear();
       // Clear all React Query cache
@@ -218,8 +232,10 @@ export default function App() {
         retryActor();
         break;
       case 'profile-fetch':
-        // Clear the stale profile query before retrying
-        queryClient.removeQueries({ queryKey: ['currentUserProfile'] });
+        // CRITICAL FIX: Clear the stale profile query before retrying
+        // Use the principal-specific query key
+        const principalId = identity?.getPrincipal().toString() || 'anonymous';
+        queryClient.removeQueries({ queryKey: ['currentUserProfile', principalId] });
         // Small delay to ensure query is cleared
         setTimeout(() => {
           retryProfile();
@@ -243,6 +259,7 @@ export default function App() {
         message={startupError.message}
         stage={startupError.stage}
         technicalDetail={startupError.technicalDetail}
+        errorType={startupError.errorType}
         isAuthError={startupError.isAuthError}
         onRetry={handleRetry}
         onSignOut={handleSignOut}

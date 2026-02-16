@@ -33,6 +33,30 @@ export function getUrlParameter(paramName: string): string | null {
 }
 
 /**
+ * Gets the current route path from the URL
+ * Supports both hash-based routing (#/path) and browser routing (/path)
+ *
+ * @returns The current route path (e.g., '/payment-success', '/dashboard')
+ */
+export function getCurrentRoutePath(): string {
+    // Check for hash-based routing first
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+        // Remove the leading #
+        const hashContent = hash.substring(1);
+        // Remove query string if present
+        const queryStartIndex = hashContent.indexOf('?');
+        if (queryStartIndex !== -1) {
+            return hashContent.substring(0, queryStartIndex);
+        }
+        return hashContent;
+    }
+
+    // Fall back to browser routing
+    return window.location.pathname;
+}
+
+/**
  * Stores a parameter in sessionStorage for persistence across navigation
  * Useful for maintaining state like admin tokens throughout the session
  *
@@ -205,31 +229,4 @@ export function getSecretFromHash(paramName: string): string | null {
  */
 export function getSecretParameter(paramName: string): string | null {
     return getSecretFromHash(paramName);
-}
-
-/**
- * Gets the current route path from the URL
- * Works with both hash-based routing (#/path) and browser routing (/path)
- *
- * @returns The current route path (e.g., '/payment-success', '/dashboard')
- */
-export function getCurrentRoutePath(): string {
-    // Check for hash-based routing first
-    const hash = window.location.hash;
-    if (hash && hash.length > 1) {
-        // Remove the leading #
-        const hashContent = hash.substring(1);
-        
-        // Split route path from query string
-        const queryStartIndex = hashContent.indexOf('?');
-        
-        if (queryStartIndex !== -1) {
-            return hashContent.substring(0, queryStartIndex);
-        }
-        
-        return hashContent;
-    }
-    
-    // Fall back to browser routing (pathname)
-    return window.location.pathname;
 }

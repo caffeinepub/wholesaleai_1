@@ -62,9 +62,11 @@ export function useGetCallerUserProfile() {
 
   // Only fetch profile when authenticated (not anonymous)
   const isAuthenticated = identity && !identity.getPrincipal().isAnonymous();
+  const principalId = identity?.getPrincipal().toString() || 'anonymous';
 
   const query = useQuery<UserProfile | null>({
-    queryKey: ['currentUserProfile'],
+    // CRITICAL FIX: Include authenticated principal in query key to prevent cross-identity cache bleed
+    queryKey: ['currentUserProfile', principalId],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       
@@ -83,23 +85,55 @@ export function useGetCallerUserProfile() {
         
         return profile;
       } catch (error: any) {
-        // Preserve the original error message for proper classification
+        // Preserve the original error for proper classification
         const errorMsg = error?.message || String(error);
         
+        // Classify error type for diagnostics
         if (errorMsg.includes('timed out') || errorMsg.includes('timeout')) {
-          throw new Error('Profile loading timed out. Please check your connection and try again.');
+          const timeoutError = new Error('Profile loading timed out. Please check your connection and try again.');
+          (timeoutError as any).errorType = 'timeout';
+          throw timeoutError;
         }
         
-        // CRITICAL FIX: Treat first-time "Unauthorized" as recoverable "no profile yet" state
-        // This prevents escalating first-time user onboarding into auth-recovery
+        // Check if this is a genuine auth failure vs first-time user
+        // First-time users may get "Unauthorized" because they don't have #user permission yet
+        // Use hasUserProfile() as a lightweight check to distinguish
         if (errorMsg.includes('Unauthorized') || errorMsg.includes('Authentication required')) {
-          // First-time users may not have #user permission yet
-          // Return null to trigger profile setup flow instead of error
-          return null;
+          try {
+            // Lightweight check: does this user have a profile record?
+            const hasProfile = await actor.hasUserProfile();
+            if (!hasProfile) {
+              // This is a first-time user, not an auth failure
+              // Return null to trigger profile setup flow
+              return null;
+            }
+            // User has a profile but still got Unauthorized - this is a real auth error
+            const authError = new Error('Authentication error. Please sign out and sign in again.');
+            (authError as any).errorType = 'auth';
+            throw authError;
+          } catch (checkError: any) {
+            // If hasUserProfile() also fails with auth error, it's a real auth problem
+            if (checkError?.message?.includes('Unauthorized') || checkError?.message?.includes('Authentication required')) {
+              const authError = new Error('Authentication error. Please sign out and sign in again.');
+              (authError as any).errorType = 'auth';
+              throw authError;
+            }
+            // Otherwise, treat as first-time user (safe fallback)
+            return null;
+          }
         }
         
-        // For other errors, preserve the message
-        throw error;
+        // Check for network errors
+        if (errorMsg.includes('network') || errorMsg.includes('connection') || errorMsg.includes('fetch')) {
+          const networkError = new Error('Network error. Please check your connection and try again.');
+          (networkError as any).errorType = 'network';
+          throw networkError;
+        }
+        
+        // For other errors, preserve the message and mark as unexpected
+        const unexpectedError = new Error(errorMsg || 'An unexpected error occurred. Please try again.');
+        (unexpectedError as any).errorType = 'unexpected';
+        throw unexpectedError;
       }
     },
     // Only enable when actor is ready AND user is authenticated
@@ -622,7 +656,7 @@ export function useGetAnalytics() {
   return useQuery<AnalyticsData>({
     queryKey: ['analytics'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error('Backend not available');
       try {
         return await actor.getAnalytics();
       } catch (error: any) {
@@ -641,11 +675,11 @@ export function useGetMembershipCatalog() {
   return useQuery<MembershipCatalog>({
     queryKey: ['membershipCatalog'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error('Backend not available');
       return await actor.getMembershipCatalog();
     },
     enabled: actorReady,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 }
 

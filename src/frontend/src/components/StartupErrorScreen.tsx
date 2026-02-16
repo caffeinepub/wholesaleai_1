@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw, LogOut } from 'lucide-react';
+import { AlertCircle, RefreshCw, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
 import { openSupportEmail } from '../lib/support';
+import { useState } from 'react';
 
 interface StartupErrorScreenProps {
   message: string;
   stage?: string;
   technicalDetail?: string;
+  errorType?: 'timeout' | 'network' | 'auth' | 'unexpected';
   isAuthError?: boolean;
   onRetry: () => void;
   onSignOut: () => void;
@@ -16,14 +18,18 @@ export default function StartupErrorScreen({
   message, 
   stage, 
   technicalDetail,
+  errorType,
   isAuthError = false,
   onRetry,
   onSignOut,
 }: StartupErrorScreenProps) {
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+
   const handleContactSupport = () => {
     const body = [
       `Error message: ${message}`,
       stage ? `Stage: ${stage}` : '',
+      errorType ? `Error type: ${errorType}` : '',
       technicalDetail ? `Technical detail: ${technicalDetail}` : '',
     ].filter(Boolean).join('\n');
     
@@ -50,20 +56,20 @@ export default function StartupErrorScreen({
 
   // Create diagnostic hint based on error type
   const getDiagnosticHint = (): string | null => {
-    if (!technicalDetail) return null;
-    
-    const detail = technicalDetail.toLowerCase();
-    
-    if (detail.includes('timeout') || detail.includes('timed out')) {
+    if (errorType === 'timeout') {
       return 'The request took too long to complete. This may indicate a slow connection or backend issue.';
     }
     
-    if (detail.includes('unauthorized') || detail.includes('authentication')) {
+    if (errorType === 'auth') {
       return 'There was an authentication problem. Try signing out and signing in again.';
     }
     
-    if (detail.includes('network') || detail.includes('connection')) {
+    if (errorType === 'network') {
       return 'Unable to reach the backend. Check your internet connection.';
+    }
+    
+    if (errorType === 'unexpected') {
+      return 'An unexpected error occurred. Please try again or contact support if the issue persists.';
     }
     
     return null;
@@ -71,6 +77,11 @@ export default function StartupErrorScreen({
 
   const stageLabel = getStageLabel(stage);
   const diagnosticHint = getDiagnosticHint();
+
+  // Sanitize technical detail (remove any potential sensitive info)
+  const sanitizedTechnicalDetail = technicalDetail
+    ? technicalDetail.replace(/[a-zA-Z0-9]{20,}/g, '[REDACTED]') // Remove long tokens/keys
+    : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -95,6 +106,29 @@ export default function StartupErrorScreen({
                 <p className="text-xs text-muted-foreground">
                   {diagnosticHint}
                 </p>
+              )}
+            </div>
+          )}
+
+          {sanitizedTechnicalDetail && (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <button
+                onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
+                className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors text-sm font-medium"
+              >
+                <span>Technical Details</span>
+                {showTechnicalDetails ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
+              {showTechnicalDetails && (
+                <div className="p-3 bg-muted/10">
+                  <p className="text-xs font-mono text-muted-foreground break-words">
+                    {sanitizedTechnicalDetail}
+                  </p>
+                </div>
               )}
             </div>
           )}

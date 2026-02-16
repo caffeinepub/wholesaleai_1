@@ -1,37 +1,76 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T22:05:05.506Z",
+  "generatedAt": "2026-02-16T23:04:36.951Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 4,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the sidebar navigation item “boxes” (all sidebar buttons/links such as Dashboard, Contracts, Admin Panel, Contact Support, Sign Out) so they render as clearly filled-in, solid-color buttons with improved visual polish (stronger background fill, clear borders, and consistent hover/active states) in both light and dark mode, on both desktop sidebar and the mobile sidebar sheet.",
+        "summary": "Diagnose and fix the root cause of the startup failure where authenticated users see the startup error screen with message \"Failed to load your profile. Please try again.\" and stage \"Profile loading\", so users can reliably load into the app.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/AppShell.tsx",
-          "frontend/src/index.css"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/AppShell.tsx",
-          "frontend/src/index.css"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Update frontend authentication/error classification so that profile-fetch failures caused by authorization (e.g., \"Unauthorized\", \"authentication required\", 401/403-style messages) are consistently detected as authentication errors and trigger the intended recovery flow (sign-out and re-login) instead of leaving the user stuck at profile loading.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/authErrors.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/authErrors.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Harden the backend user-profile retrieval path used by the frontend (getCallerUserProfile) so it does not intermittently trap/throw for valid authenticated callers; when a profile does not exist yet, it should return an empty/none result that the frontend can treat as \"needs profile setup\" rather than an error.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Add lightweight diagnostics for profile loading failures to make future occurrences actionable: ensure the frontend captures and displays a useful technicalDetail on the startup error screen (without exposing secrets) and logs the original error to the console, and ensure the retry path clears any stale profile query state before refetching.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/components/StartupErrorScreen.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/components/StartupErrorScreen.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/AppShell.tsx",
-    "frontend/src/index.css",
+    "frontend/src/App.tsx",
+    "frontend/src/components/StartupErrorScreen.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/lib/authErrors.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

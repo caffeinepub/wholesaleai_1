@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Make all sidebar navigation items render as clearly filled-in, solid-color buttons with polished, consistent styling across light/dark mode and desktop/mobile sidebars.
+**Goal:** Fix the intermittent startup failure where authenticated users get stuck on “Failed to load your profile” during the “Profile loading” stage, so login reliably reaches the app (or profile setup when appropriate).
 
 **Planned changes:**
-- Update sidebar navigation item styling (background fill, borders, spacing/shape if needed) so buttons are solid (non-transparent) in both light and dark mode.
-- Define consistent visual states for sidebar items (default, hover, focus, active) across all links/buttons including Dashboard, Contracts, Admin Panel, Contact Support, and Sign Out.
-- Apply the same filled button styling to the mobile sidebar Sheet navigation as well as the desktop sidebar, without changing backend logic or any immutable frontend paths.
+- Diagnose and fix the root cause of intermittent profile-loading failures that block existing authenticated users from reaching the main app shell.
+- Update frontend error classification so auth/permission-related profile fetch failures consistently trigger the intended recovery flow (sign-out and return to sign-in) instead of looping on the profile loading error screen.
+- Harden the backend caller profile retrieval path (getCallerUserProfile) to return a “no profile”/none result for new authenticated users rather than trapping/throwing, enabling the frontend to show profile setup.
+- Improve frontend diagnostics for profile loading failures by logging the original error to the console, showing a safe technicalDetail on the startup error screen, and ensuring Retry clears any stale cached profile query state before refetching.
 
-**User-visible outcome:** Sidebar navigation items appear as clearly colored, filled-in buttons with consistent hover/active/focus feedback in both light and dark mode on desktop and mobile.
+**User-visible outcome:** After signing in with Internet Identity, users reliably enter the app; new users without profiles are routed to profile setup; auth-related failures send users back to sign-in; Retry correctly re-attempts profile loading without a full refresh and shows useful (non-sensitive) technical details when it fails.

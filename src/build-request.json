@@ -1,37 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Fill sidebar navigation boxes with solid color styling",
+  "title": "Fix intermittent profile loading failure blocking login",
   "projectName": "Wholesale Lens",
-  "priority": "normal",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the sidebar navigation item “boxes” (all sidebar buttons/links such as Dashboard, Contracts, Admin Panel, Contact Support, Sign Out) so they render as clearly filled-in, solid-color buttons with improved visual polish (stronger background fill, clear borders, and consistent hover/active states) in both light and dark mode, on both desktop sidebar and the mobile sidebar sheet.",
+      "text": "Diagnose and fix the root cause of the startup failure where authenticated users see the startup error screen with message \"Failed to load your profile. Please try again.\" and stage \"Profile loading\", so users can reliably load into the app.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "recent-messages-4"
+        ],
+        "quotes": [
+          "Failed to load your profile. Please try again.\n\nFailed at: Profile loading\n\nGot this error again please fix I need to load in"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After signing in with Internet Identity, the app reaches the main application shell without showing the \"Failed to load your profile\" startup error for existing users with profiles.",
+        "If the user has no profile yet, the app shows the profile setup dialog instead of the startup error screen.",
+        "If the backend is unreachable or the call genuinely fails, the error screen shows the correct stage (\"Profile loading\") and the Retry button successfully retries the profile fetch without requiring a full page refresh."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Update frontend authentication/error classification so that profile-fetch failures caused by authorization (e.g., \"Unauthorized\", \"authentication required\", 401/403-style messages) are consistently detected as authentication errors and trigger the intended recovery flow (sign-out and re-login) instead of leaving the user stuck at profile loading.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "recent-messages-4"
         ],
         "quotes": [
-          "Make those side b ar boxes filled in with color make it look nice"
+          "Failed to load your profile. Please try again.\n\nFailed at: Profile loading"
         ]
       },
       "acceptanceCriteria": [
-        "All sidebar navigation buttons have a visibly solid (non-transparent) background fill in light mode and dark mode; underlying page content is not visible through them.",
-        "Default, hover, focus, and active states are visually distinct and consistent across all sidebar buttons (including Admin Panel, Contact Support, and Sign Out).",
-        "The same filled-in styling applies in the mobile sidebar (Sheet) as well as the desktop sidebar.",
-        "No changes are made to any immutable frontend paths (e.g., frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui/*)."
+        "When the profile fetch fails due to an auth/permission error, the app automatically runs the sign-out recovery flow and returns the user to the sign-in screen.",
+        "The startup error screen does not repeatedly appear for auth-related profile fetch errors; the user is instead guided back to sign-in.",
+        "All user-facing messages remain in English (including any newly added error messages)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Harden the backend user-profile retrieval path used by the frontend (getCallerUserProfile) so it does not intermittently trap/throw for valid authenticated callers; when a profile does not exist yet, it should return an empty/none result that the frontend can treat as \"needs profile setup\" rather than an error.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "recent-messages-4"
+        ],
+        "quotes": [
+          "Failed to load your profile. Please try again.\n\nFailed at: Profile loading"
+        ]
+      },
+      "acceptanceCriteria": [
+        "For a brand-new authenticated principal with no stored profile, the backend call used to fetch the caller profile completes successfully and indicates \"no profile\" (rather than throwing).",
+        "For an existing authenticated principal with a stored profile, the backend call returns the profile successfully.",
+        "The backend does not require a state migration for this fix unless the implementation explicitly changes stable state layout (avoid migrations if possible)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add lightweight diagnostics for profile loading failures to make future occurrences actionable: ensure the frontend captures and displays a useful technicalDetail on the startup error screen (without exposing secrets) and logs the original error to the console, and ensure the retry path clears any stale profile query state before refetching.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages-4"
+        ],
+        "quotes": [
+          "Failed to load your profile. Please try again.\n\nFailed at: Profile loading"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When profile loading fails, the startup error screen includes a technical detail string that helps distinguish timeout vs network vs auth vs unexpected errors.",
+        "Clicking Retry from a profile-loading failure clears the cached profile query and successfully re-attempts the request.",
+        "No sensitive values (tokens, secrets, raw credentials) are displayed in the technical detail."
       ]
     }
   ],
   "constraints": [
-    "Frontend changes must respect immutable paths listed in SYSTEM_CONTEXT (do not edit frontend/src/components/ui/* and the immutable hook/main files).",
-    "Backend (Motoko) logic and state must not be modified for this styling-only request."
+    "Do not modify any files under frontend/src/components/ui (shadcn components are read-only).",
+    "Do not modify files listed as immutable in SYSTEM_CONTEXT (compose around them instead).",
+    "Backend must remain a single-actor Motoko architecture with logic in backend/main.mo; only add backend/migration.mo if a stable-state schema change is unavoidable."
   ],
   "nonGoals": [
-    "Adding new navigation routes/pages or changing the sidebar information architecture.",
-    "Changing authentication, membership gating, or backend authorization logic.",
-    "Generating new images or logos for the sidebar."
+    "Adding new product features unrelated to login/profile loading.",
+    "Changing Internet Identity provider behavior beyond what is needed to recover from auth-related profile-load failures.",
+    "Implementing third-party authentication providers or external databases."
   ],
   "imageRequirements": {
     "required": [],

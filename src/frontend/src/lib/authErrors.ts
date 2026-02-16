@@ -4,7 +4,8 @@
 
 /**
  * Check if an error is authentication-related
- * CRITICAL FIX: Refined to not misclassify expected first-time onboarding states
+ * CRITICAL FIX: Broadened to detect common auth failure patterns while avoiding
+ * misclassification of first-time onboarding states
  */
 export function isAuthError(error: any): boolean {
   if (!error) return false;
@@ -13,10 +14,18 @@ export function isAuthError(error: any): boolean {
   const lowerMessage = message.toLowerCase();
   
   // Real authentication failures that require sign-out recovery
+  // Expanded to catch more auth-related errors
   return (
     lowerMessage.includes('authentication error') ||
     lowerMessage.includes('please sign in') ||
-    lowerMessage.includes('sign out and sign in')
+    lowerMessage.includes('sign out and sign in') ||
+    lowerMessage.includes('delegation expired') ||
+    lowerMessage.includes('invalid identity') ||
+    lowerMessage.includes('anonymous caller') ||
+    lowerMessage.includes('forbidden') ||
+    // Only treat "unauthorized" as auth error if it's NOT from first-time user flow
+    // (first-time users are handled by returning null in the query)
+    (lowerMessage.includes('unauthorized') && !lowerMessage.includes('profile'))
   );
 }
 

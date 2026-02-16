@@ -17,11 +17,10 @@ import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 import Stripe "stripe/stripe";
 import OutCall "http-outcalls/outcall";
-
+import Migration "migration";
 
 // Data migration with new actor definition via with-clause
-
-
+(with migration = Migration.run)
 actor {
   include MixinStorage();
 
@@ -257,9 +256,9 @@ actor {
 
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    // Allow any authenticated user to get their own profile
+    // Returns empty/none result if not found, does not trap
     if (not isAuthenticated(caller)) {
-      Runtime.trap("Unauthorized: Authentication required");
+      return null;
     };
     userProfiles.get(caller).map(func(custom) { custom.profile });
   };
@@ -1115,4 +1114,3 @@ actor {
     };
   };
 };
-
