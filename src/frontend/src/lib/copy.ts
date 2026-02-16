@@ -13,6 +13,10 @@ export const COPY = {
     unauthorized: 'You do not have permission to access this feature',
     notFound: 'The requested resource was not found',
     generic: 'Something went wrong. Please try again.',
+    network: 'Network error. Please check your connection and try again.',
+    permission: 'You do not have permission to access this feature. Please check your membership tier or contact support.',
+    temporary: 'A temporary error occurred. Please try again in a moment.',
+    backend: 'Failed to connect to the backend. Please check your connection and try again.',
   },
   empty: {
     deals: 'No deals yet. Create your first deal to get started.',
@@ -34,5 +38,10 @@ export const COPY = {
     grantDescription: 'Update a user\'s membership tier',
     savePricing: 'Save Pricing',
     grantMembership: 'Grant Membership',
+  },
+  support: {
+    contactUs: 'Contact Us',
+    emailSupport: 'Email Support',
+    needHelp: 'Need help? Contact our support team.',
   },
 };

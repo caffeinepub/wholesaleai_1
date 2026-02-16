@@ -1,12 +1,26 @@
-import { useState, lazy, Suspense, useEffect } from 'react';
-import { Home, Sparkles, Layers, Users, FileText, BarChart3, CreditCard, Menu, X, LogOut, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { useIsCallerAdmin } from '../hooks/useQueries';
+import { Separator } from '@/components/ui/separator';
+import { 
+  LayoutDashboard, 
+  Search, 
+  Briefcase, 
+  Users, 
+  FileText, 
+  BarChart3, 
+  CreditCard,
+  Settings,
+  LogOut,
+  Mail,
+} from 'lucide-react';
+import { COPY } from '../lib/copy';
+import { openSupportEmail } from '../lib/support';
 import type { UserProfile } from '../backend';
 
-// Lazy load pages to reduce initial bundle size
+// Lazy load pages
+import { lazy, Suspense } from 'react';
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
 const DealAnalyzerPage = lazy(() => import('../pages/DealAnalyzerPage'));
 const DealsPipelinePage = lazy(() => import('../pages/DealsPipelinePage'));
@@ -16,40 +30,23 @@ const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
 const MembershipPage = lazy(() => import('../pages/MembershipPage'));
 const AdminPanelPage = lazy(() => import('../pages/AdminPanelPage'));
 
-type Page = 'dashboard' | 'analyzer' | 'pipeline' | 'buyers' | 'contracts' | 'analytics' | 'membership' | 'admin';
-
-const navItems = [
-  { id: 'dashboard' as Page, label: 'Dashboard', icon: Home },
-  { id: 'analyzer' as Page, label: 'Deal Analyzer', icon: Sparkles },
-  { id: 'pipeline' as Page, label: 'Deals Pipeline', icon: Layers },
-  { id: 'buyers' as Page, label: 'Buyers List', icon: Users },
-  { id: 'contracts' as Page, label: 'Contracts', icon: FileText },
-  { id: 'analytics' as Page, label: 'Analytics', icon: BarChart3 },
-  { id: 'membership' as Page, label: 'Membership', icon: CreditCard },
-];
-
 interface AppShellProps {
   userProfile: UserProfile | null;
 }
 
+type PageKey = 'dashboard' | 'analyzer' | 'pipeline' | 'buyers' | 'contracts' | 'analytics' | 'membership' | 'admin';
+
 export default function AppShell({ userProfile }: AppShellProps) {
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { clear } = useInternetIdentity();
   const queryClient = useQueryClient();
-  const { data: isAdmin } = useIsCallerAdmin();
+  const [currentPage, setCurrentPage] = useState<PageKey>('dashboard');
 
-  // Listen for navigation events from FeatureLock
   useEffect(() => {
     const handleNavigateToMembership = () => {
       setCurrentPage('membership');
-      setSidebarOpen(false);
     };
-
     window.addEventListener('navigate-to-membership', handleNavigateToMembership);
-    return () => {
-      window.removeEventListener('navigate-to-membership', handleNavigateToMembership);
-    };
+    return () => window.removeEventListener('navigate-to-membership', handleNavigateToMembership);
   }, []);
 
   const handleLogout = async () => {
@@ -57,187 +54,143 @@ export default function AppShell({ userProfile }: AppShellProps) {
     queryClient.clear();
   };
 
-  const renderPage = () => {
-    const PageLoadingFallback = (
-      <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-      </div>
-    );
+  const handleContactSupport = () => {
+    openSupportEmail('Wholesale Lens - Support Request');
+  };
 
-    switch (currentPage) {
-      case 'dashboard':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <DashboardPage />
-          </Suspense>
-        );
-      case 'analyzer':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <DealAnalyzerPage />
-          </Suspense>
-        );
-      case 'pipeline':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <DealsPipelinePage />
-          </Suspense>
-        );
-      case 'buyers':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <BuyersListPage />
-          </Suspense>
-        );
-      case 'contracts':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <ContractsPage />
-          </Suspense>
-        );
-      case 'analytics':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <AnalyticsPage />
-          </Suspense>
-        );
-      case 'membership':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <MembershipPage />
-          </Suspense>
-        );
-      case 'admin':
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <AdminPanelPage />
-          </Suspense>
-        );
-      default:
-        return (
-          <Suspense fallback={PageLoadingFallback}>
-            <DashboardPage />
-          </Suspense>
-        );
-    }
+  const navItems = [
+    { key: 'dashboard' as PageKey, label: COPY.nav.dashboard, icon: LayoutDashboard },
+    { key: 'analyzer' as PageKey, label: COPY.nav.analyzer, icon: Search },
+    { key: 'pipeline' as PageKey, label: COPY.nav.pipeline, icon: Briefcase },
+    { key: 'buyers' as PageKey, label: COPY.nav.buyers, icon: Users },
+    { key: 'contracts' as PageKey, label: COPY.nav.contracts, icon: FileText },
+    { key: 'analytics' as PageKey, label: COPY.nav.analytics, icon: BarChart3 },
+    { key: 'membership' as PageKey, label: COPY.nav.membership, icon: CreditCard },
+  ];
+
+  const renderPage = () => {
+    const pageMap = {
+      dashboard: DashboardPage,
+      analyzer: DealAnalyzerPage,
+      pipeline: DealsPipelinePage,
+      buyers: BuyersListPage,
+      contracts: ContractsPage,
+      analytics: AnalyticsPage,
+      membership: MembershipPage,
+      admin: AdminPanelPage,
+    };
+
+    const PageComponent = pageMap[currentPage];
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      }>
+        <PageComponent />
+      </Suspense>
+    );
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <aside 
+        className="w-64 flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background shadow-sidebar"
       >
-        <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-16 items-center justify-between px-6 border-b border-border">
+        {/* Logo */}
+        <div className="p-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
             <img
               src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
               alt="Wholesale Lens"
-              className="h-8 w-8"
+              className="h-10 w-10 object-contain"
+              width={40}
+              height={40}
             />
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <img
+              src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
+              alt="Wholesale Lens"
+              className="h-6 w-auto object-contain"
+              width={120}
+              height={24}
+            />
           </div>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setCurrentPage(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
-                </button>
-              );
-            })}
-            {isAdmin && (
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.key;
+            return (
               <button
-                onClick={() => {
-                  setCurrentPage('admin');
-                  setSidebarOpen(false);
-                }}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  currentPage === 'admin'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
+                key={item.key}
+                onClick={() => setCurrentPage(item.key)}
+                className={`
+                  w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
+                  transition-all duration-200
+                  ${isActive 
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm' 
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                  }
+                `}
               >
-                <Settings className="h-5 w-5" />
-                Admin Panel
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                <span className="truncate">{item.label}</span>
               </button>
-            )}
-          </nav>
+            );
+          })}
+        </nav>
 
-          {/* User info & logout */}
-          <div className="border-t border-border p-4 space-y-2">
-            {userProfile && (
-              <div className="text-sm text-muted-foreground px-3 py-2">
-                <p className="font-medium text-foreground">{userProfile.name}</p>
-                <p className="text-xs">{userProfile.membershipTier} Plan</p>
-              </div>
-            )}
-            <Button
-              onClick={handleLogout}
-              variant="ghost"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-          </div>
+        <Separator className="bg-sidebar-border" />
+
+        {/* User section */}
+        <div className="p-4 space-y-3 border-t border-sidebar-border">
+          {userProfile && (
+            <div className="px-3 py-2 space-y-1">
+              <p className="text-sm font-semibold text-sidebar-foreground truncate">
+                {userProfile.name}
+              </p>
+              <p className="text-xs text-sidebar-foreground/70 capitalize">
+                {userProfile.membershipTier.toLowerCase()} Member
+              </p>
+            </div>
+          )}
+
+          <Button
+            onClick={() => setCurrentPage('admin')}
+            variant="ghost"
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <Settings className="mr-3 h-4 w-4" />
+            {COPY.nav.admin}
+          </Button>
+
+          <Button
+            onClick={handleContactSupport}
+            variant="ghost"
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <Mail className="mr-3 h-4 w-4" />
+            {COPY.support.contactUs}
+          </Button>
+
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="mr-3 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between h-16 px-4 border-b border-border bg-card">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <img
-            src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
-            alt="Wholesale Lens"
-            className="h-8 w-8"
-          />
-          <div className="w-6" /> {/* Spacer for centering */}
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {renderPage()}
-        </main>
-      </div>
-
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      <main className="flex-1 overflow-y-auto">
+        {renderPage()}
+      </main>
     </div>
   );
 }

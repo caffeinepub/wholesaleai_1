@@ -2,10 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-frontend-membership-pricing-fallbacks-to-match-the-new-backend-defaults-so-the-ui-shows-the-new-lower-prices-whenever-catalog-loading-fails-update-fallback-pricing-in-membershippage",
-      "featureTitle": "Update the frontend membership pricing fallbacks to match the new backend defaults so the UI shows the new lower prices whenever catalog loading fails (update FALLBACK_PRICING in MembershipPage).",
+      "featureId": "feature-fix-the-startup-error-failed-to-load-your-profile-this-may-be-a-temporary-issue-by-ensuring-authenticated-users-can-successfully-fetch-and-if-needed-initialize-their-caller-profile-on-first-login-including-brand-new-users-who-have-no-existing-profile-yet",
+      "featureTitle": "Fix the startup error \"Failed to load your profile. This may be a temporary issue.\" by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users who have no existing profile yet.",
       "files": [
-        "frontend/src/pages/MembershipPage.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/ProfileSetupDialog.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -14,7 +16,57 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "stripe@3.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-visible-contact-us-option-in-the-authenticated-app-ui-that-opens-the-user-s-email-client-to-email-wholesalensrealestate-gmail-com-e-g-via-a-mailto-link",
+      "featureTitle": "Add a visible \"Contact Us\" option in the authenticated app UI that opens the user’s email client to email wholesalensrealestate@gmail.com (e.g., via a mailto: link).",
+      "files": [
+        "frontend/src/components/AppShell.tsx",
+        "frontend/src/lib/copy.ts",
+        "frontend/src/lib/support.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "stripe@3.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-launch-reliability-by-adding-user-facing-recovery-paths-when-critical-startup-queries-fail-actor-initialization-and-profile-fetch-including-a-support-pathway-that-points-users-to-the-new-contact-us-email-when-startup-errors-persist",
+      "featureTitle": "Improve launch reliability by adding user-facing recovery paths when critical startup queries fail (actor initialization and profile fetch), including a support pathway that points users to the new Contact Us email when startup errors persist.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/PageQueryErrorState.tsx",
+        "frontend/src/components/StartupErrorScreen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "stripe@3.0.0",
+        "http-outcalls@3.0.0"
       ],
       "testIds": [
         "REQ-3"
@@ -22,10 +74,13 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-membership-page-to-show-monthly-pricing-for-all-plans-including-enterprise-so-the-displayed-period-is-always-per-month",
-      "featureTitle": "Update the Membership page to show monthly pricing for all plans (including Enterprise) so the displayed period is always per month.",
+      "featureId": "feature-apply-a-cohesive-launch-ready-visual-theme-polish-across-the-authenticated-shell-and-startup-screens-typography-spacing-and-a-warm-real-estate-ledger-feel-keeping-the-current-branding-and-avoiding-introducing-new-product-features",
+      "featureTitle": "Apply a cohesive, launch-ready visual theme polish across the authenticated shell and startup screens (typography, spacing, and a warm real-estate/ledger feel), keeping the current branding and avoiding introducing new product features.",
       "files": [
-        "frontend/src/pages/MembershipPage.tsx"
+        "frontend/src/components/AppShell.tsx",
+        "frontend/src/components/StartupErrorScreen.tsx",
+        "frontend/src/components/StartupLoadingScreen.tsx",
+        "frontend/src/index.css"
       ],
       "components": [
         "authorization@4.0.0",
@@ -34,7 +89,9 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "stripe@3.0.0",
+        "http-outcalls@3.0.0"
       ],
       "testIds": [
         "REQ-4"

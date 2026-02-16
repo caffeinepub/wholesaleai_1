@@ -8,7 +8,7 @@ import { getSecretParameter } from '../utils/urlParams';
 const ACTOR_QUERY_KEY = 'backend-actor';
 
 export function useBackendActor() {
-  const { identity } = useInternetIdentity();
+  const { identity, isInitializing: identityInitializing } = useInternetIdentity();
   const queryClient = useQueryClient();
   
   const actorQuery = useQuery<backendInterface>({
@@ -43,7 +43,7 @@ export function useBackendActor() {
       return actor;
     },
     staleTime: Infinity,
-    enabled: true,
+    enabled: !identityInitializing,
     retry: 2,
   });
 
@@ -58,9 +58,15 @@ export function useBackendActor() {
     }
   }, [actorQuery.data, queryClient]);
 
+  // Compute readiness states
+  const isLoading = identityInitializing || actorQuery.isLoading;
+  const actorReady = !identityInitializing && !!actorQuery.data && !actorQuery.isLoading;
+
   return {
     actor: actorQuery.data || null,
     isFetching: actorQuery.isFetching,
+    isLoading,
+    actorReady,
     isError: actorQuery.isError,
     error: actorQuery.error,
     refetch: actorQuery.refetch,

@@ -1,238 +1,248 @@
-import { useEffect, useRef } from 'react';
-import { useGetCallerUserProfile, useSaveCallerUserProfile, useGetMembershipCatalog } from '../hooks/useQueries';
-import { MembershipTier, type MembershipPricing } from '../backend';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { useGetMembershipCatalog, useCreateCheckoutSession } from '../hooks/useQueries';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Check, Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { MembershipTier, type ShoppingItem } from '../backend';
 import { formatCents } from '../lib/money';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-
-// Fallback values matching backend defaults
-const FALLBACK_PRICING = {
-  basic: {
-    monthlyPriceCents: 499n,
-    annualPriceCents: 4999n,
-    isOnSale: false,
-    salePriceCents: undefined,
-  },
-  pro: {
-    monthlyPriceCents: 1499n,
-    annualPriceCents: 14999n,
-    isOnSale: false,
-    salePriceCents: undefined,
-  },
-  enterprise: {
-    monthlyPriceCents: 3999n,
-    annualPriceCents: 39999n,
-    isOnSale: false,
-    salePriceCents: undefined,
-  },
-};
-
-const PLAN_FEATURES = {
-  [MembershipTier.Basic]: [
-    'Add Deals',
-    'Use AI Analyzer',
-    'Profit Calculations',
-    'Basic Dashboard',
-    'Limited to 15 active deals',
-  ],
-  [MembershipTier.Pro]: [
-    'Everything in Basic',
-    'Unlimited Deals',
-    'Buyers List',
-    'Deal Pipeline Tracking',
-    'Seller Notes',
-    'Contract Deadlines',
-  ],
-  [MembershipTier.Enterprise]: [
-    'Everything in Pro',
-    'Advanced Analytics',
-    'Contract Management',
-    'File Uploads',
-    'Priority Support',
-    'Early Access Features',
-  ],
-};
-
-function getPriceDisplay(pricing: MembershipPricing, period: 'monthly' | 'annual'): {
-  price: string;
-  salePrice: string | null;
-  period: string;
-} {
-  const isMonthly = period === 'monthly';
-  const regularPrice = isMonthly ? pricing.monthlyPriceCents : pricing.annualPriceCents;
-  const periodLabel = isMonthly ? 'month' : 'year';
-
-  if (pricing.isOnSale && pricing.salePriceCents) {
-    return {
-      price: formatCents(regularPrice),
-      salePrice: formatCents(pricing.salePriceCents),
-      period: periodLabel,
-    };
-  }
-
-  return {
-    price: formatCents(regularPrice),
-    salePrice: null,
-    period: periodLabel,
-  };
-}
 
 export default function MembershipPage() {
-  const { data: userProfile } = useGetCallerUserProfile();
-  const { data: catalog, isLoading: catalogLoading, isError: catalogError, error: catalogErrorObj, refetch: refetchCatalog } = useGetMembershipCatalog();
-  const saveProfile = useSaveCallerUserProfile();
-  const errorShownRef = useRef(false);
+  const { data: catalog, isLoading } = useGetMembershipCatalog();
+  const createCheckoutSession = useCreateCheckoutSession();
+  const [isAnnual, setIsAnnual] = useState(false);
 
-  // Use catalog data or fallback
-  const pricing = catalog || FALLBACK_PRICING;
+  const handleUpgrade = async (tier: MembershipTier, tierName: string) => {
+    if (!catalog) return;
 
-  // Show non-blocking error toast only once when catalog fails
-  useEffect(() => {
-    if (catalogError && !errorShownRef.current) {
-      errorShownRef.current = true;
-      toast.error('Failed to load current pricing. Showing default prices.', { 
-        id: 'catalog-error',
-        duration: 5000,
+    try {
+      let pricing;
+      let productName;
+      let productDescription;
+
+      switch (tier) {
+        case MembershipTier.Basic:
+          pricing = catalog.basic;
+          productName = 'Wholesale Lens Basic';
+          productDescription = 'Basic membership with core features';
+          break;
+        case MembershipTier.Pro:
+          pricing = catalog.pro;
+          productName = 'Wholesale Lens Pro';
+          productDescription = 'Pro membership with advanced features';
+          break;
+        case MembershipTier.Enterprise:
+          pricing = catalog.enterprise;
+          productName = 'Wholesale Lens Enterprise';
+          productDescription = 'Enterprise membership with all features';
+          break;
+      }
+
+      const priceInCents = isAnnual
+        ? pricing.annualPriceCents
+        : pricing.monthlyPriceCents;
+
+      const finalPrice = pricing.isOnSale && pricing.salePriceCents
+        ? pricing.salePriceCents
+        : priceInCents;
+
+      const items: ShoppingItem[] = [
+        {
+          productName: `${productName} - ${isAnnual ? 'Annual' : 'Monthly'}`,
+          productDescription,
+          priceInCents: finalPrice,
+          quantity: 1n,
+          currency: 'usd',
+        },
+      ];
+
+      const baseUrl = `${window.location.protocol}//${window.location.host}`;
+      const successUrl = `${baseUrl}/payment-success`;
+      const cancelUrl = `${baseUrl}/payment-cancel`;
+
+      const session = await createCheckoutSession.mutateAsync({
+        items,
+        successUrl,
+        cancelUrl,
       });
-    }
-  }, [catalogError]);
 
-  const plans = [
+      if (!session?.url) {
+        throw new Error('Stripe session missing url');
+      }
+
+      window.location.href = session.url;
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to start checkout');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!catalog) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Unable to load membership plans</p>
+      </div>
+    );
+  }
+
+  const tiers = [
     {
-      tier: MembershipTier.Basic,
       name: 'Basic',
-      pricing: pricing.basic,
-      period: 'monthly' as const,
-      features: PLAN_FEATURES[MembershipTier.Basic],
+      tier: MembershipTier.Basic,
+      pricing: catalog.basic,
+      description: 'Perfect for getting started with wholesale real estate',
+      features: [
+        'Up to 15 active deals',
+        'AI-powered deal analyzer',
+        'Deal pipeline management',
+        'Basic analytics',
+        'Email support',
+      ],
     },
     {
-      tier: MembershipTier.Pro,
       name: 'Pro',
-      pricing: pricing.pro,
-      period: 'monthly' as const,
-      features: PLAN_FEATURES[MembershipTier.Pro],
+      tier: MembershipTier.Pro,
+      pricing: catalog.pro,
+      description: 'For serious wholesalers ready to scale',
+      features: [
+        'Unlimited active deals',
+        'AI-powered deal analyzer',
+        'Advanced deal pipeline',
+        'Buyers list management',
+        'Buyer-deal matching',
+        'Priority support',
+      ],
+      popular: true,
     },
     {
-      tier: MembershipTier.Enterprise,
       name: 'Enterprise',
-      pricing: pricing.enterprise,
-      period: 'monthly' as const,
-      features: PLAN_FEATURES[MembershipTier.Enterprise],
+      tier: MembershipTier.Enterprise,
+      pricing: catalog.enterprise,
+      description: 'Complete solution for high-volume operations',
+      features: [
+        'Everything in Pro',
+        'Contract management',
+        'Document storage',
+        'Advanced analytics',
+        'Profit tracking by zip',
+        'Dedicated support',
+      ],
     },
   ];
 
-  const handleChangePlan = (tier: MembershipTier) => {
-    if (!userProfile) return;
-    if (userProfile.membershipTier === tier) {
-      toast.info('You are already on this plan');
-      return;
-    }
-
-    saveProfile.mutate(
-      { ...userProfile, membershipTier: tier },
-      {
-        onSuccess: () => {
-          toast.success(`Successfully switched to ${tier} plan!`);
-        },
-        onError: (error: any) => {
-          toast.error(error.message || 'Failed to change plan. Please try again.');
-        },
-      }
-    );
-  };
-
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Membership Plans</h1>
-        <p className="text-muted-foreground">Choose the plan that fits your wholesaling business</p>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="text-center space-y-4 mb-12">
+        <h1 className="text-4xl font-bold tracking-tight">Choose Your Plan</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Select the perfect plan to power your wholesale real estate business
+        </p>
+
+        <div className="flex items-center justify-center gap-4 pt-4">
+          <Label htmlFor="billing-toggle" className={!isAnnual ? 'font-semibold' : ''}>
+            Monthly
+          </Label>
+          <Switch
+            id="billing-toggle"
+            checked={isAnnual}
+            onCheckedChange={setIsAnnual}
+          />
+          <Label htmlFor="billing-toggle" className={isAnnual ? 'font-semibold' : ''}>
+            Annual
+            <span className="ml-2 text-primary text-sm">(Save up to 30%)</span>
+          </Label>
+        </div>
       </div>
 
-      {catalogLoading && (
-        <Alert>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <AlertDescription>Loading current pricing...</AlertDescription>
-        </Alert>
-      )}
+      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {tiers.map((tierInfo) => {
+          const pricing = tierInfo.pricing;
+          const priceInCents = isAnnual
+            ? pricing.annualPriceCents
+            : pricing.monthlyPriceCents;
 
-      {catalogError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>Failed to load pricing. Showing default prices.</span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => refetchCatalog()}
-              className="ml-4"
-            >
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+          const finalPrice = pricing.isOnSale && pricing.salePriceCents
+            ? pricing.salePriceCents
+            : priceInCents;
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {plans.map((plan) => {
-          const { price, salePrice, period } = getPriceDisplay(plan.pricing, plan.period);
-          const isCurrentPlan = userProfile?.membershipTier === plan.tier;
+          const isOnSale = pricing.isOnSale && pricing.salePriceCents;
 
           return (
-            <Card key={plan.tier} className={isCurrentPlan ? 'border-primary shadow-lg' : ''}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>{plan.name}</span>
-                  {isCurrentPlan && (
-                    <span className="text-xs font-normal bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                      Current
-                    </span>
-                  )}
-                </CardTitle>
-                <div className="mt-4">
-                  {salePrice ? (
-                    <div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold">{salePrice}</span>
-                        <span className="text-muted-foreground">/ {period}</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground line-through">{price}</div>
-                      <div className="text-xs text-primary font-medium mt-1">Sale Price!</div>
+            <Card
+              key={tierInfo.name}
+              className={`relative ${
+                tierInfo.popular
+                  ? 'border-primary shadow-lg scale-105'
+                  : 'border-border'
+              }`}
+            >
+              {tierInfo.popular && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <Zap className="h-3 w-3" />
+                    Most Popular
+                  </div>
+                </div>
+              )}
+
+              <CardHeader className="text-center pb-8">
+                <CardTitle className="text-2xl">{tierInfo.name}</CardTitle>
+                <CardDescription className="text-base pt-2">
+                  {tierInfo.description}
+                </CardDescription>
+
+                <div className="pt-6">
+                  {isOnSale && (
+                    <div className="text-muted-foreground line-through text-lg">
+                      {formatCents(priceInCents)}
                     </div>
-                  ) : (
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold">{price}</span>
-                      <span className="text-muted-foreground">/ {period}</span>
+                  )}
+                  <div className="text-4xl font-bold">
+                    {formatCents(finalPrice)}
+                  </div>
+                  <div className="text-muted-foreground text-sm mt-1">
+                    per {isAnnual ? 'year' : 'month'}
+                  </div>
+                  {isOnSale && (
+                    <div className="text-primary text-sm font-semibold mt-2">
+                      Limited Time Sale!
                     </div>
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span>{feature}</span>
+
+              <CardContent className="space-y-6">
+                <ul className="space-y-3">
+                  {tierInfo.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">{feature}</span>
                     </li>
                   ))}
                 </ul>
+
                 <Button
-                  onClick={() => handleChangePlan(plan.tier)}
-                  disabled={isCurrentPlan || saveProfile.isPending}
+                  onClick={() => handleUpgrade(tierInfo.tier, tierInfo.name)}
+                  disabled={createCheckoutSession.isPending}
                   className="w-full"
-                  variant={isCurrentPlan ? 'outline' : 'default'}
+                  variant={tierInfo.popular ? 'default' : 'outline'}
                 >
-                  {saveProfile.isPending ? (
+                  {createCheckoutSession.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Switching...
+                      Processing...
                     </>
-                  ) : isCurrentPlan ? (
-                    'Current Plan'
                   ) : (
-                    `Switch to ${plan.name}`
+                    'Get Started'
                   )}
                 </Button>
               </CardContent>
@@ -241,14 +251,10 @@ export default function MembershipPage() {
         })}
       </div>
 
-      <Card className="bg-muted/50">
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground text-center">
-            Note: This is a demo application. No actual payment processing is implemented.
-            Plan changes are instant for demonstration purposes.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="mt-16 text-center text-sm text-muted-foreground">
+        <p>All plans include a 7-day money-back guarantee</p>
+        <p className="mt-2">Need help choosing? Contact our support team</p>
+      </div>
     </div>
   );
 }

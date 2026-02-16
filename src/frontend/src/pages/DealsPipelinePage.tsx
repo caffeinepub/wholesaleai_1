@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import DealCard from '../components/DealCard';
 import DealEditorDialog from '../components/DealEditorDialog';
+import PageQueryErrorState from '../components/PageQueryErrorState';
 import { toast } from 'sonner';
 
 const stages = [
@@ -18,7 +19,7 @@ const stages = [
 ];
 
 export default function DealsPipelinePage() {
-  const { data: deals = [], isLoading } = useGetDeals();
+  const { data: deals = [], isLoading, isError, error, refetch } = useGetDeals();
   const { data: userProfile } = useGetCallerUserProfile();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<bigint | null>(null);
@@ -30,6 +31,7 @@ export default function DealsPipelinePage() {
   const handleCreateDeal = () => {
     if (!canAddDeal) {
       toast.error('Basic plan limited to 15 active deals. Upgrade to Pro or Enterprise.');
+      window.dispatchEvent(new CustomEvent('navigate-to-membership'));
       return;
     }
     setEditingDealId(null);
@@ -49,6 +51,21 @@ export default function DealsPipelinePage() {
           <p className="text-muted-foreground">Loading pipeline...</p>
         </div>
       </div>
+    );
+  }
+
+  if (isError) {
+    const isMembershipError = error?.message?.includes('permission') || error?.message?.includes('membership');
+    
+    return (
+      <PageQueryErrorState
+        message={error?.message || 'Failed to load your deals pipeline. Please try again.'}
+        onRetry={refetch}
+        secondaryAction={isMembershipError ? {
+          label: 'View Membership Plans',
+          onClick: () => window.dispatchEvent(new CustomEvent('navigate-to-membership'))
+        } : undefined}
+      />
     );
   }
 
@@ -110,4 +127,3 @@ export default function DealsPipelinePage() {
     </div>
   );
 }
-

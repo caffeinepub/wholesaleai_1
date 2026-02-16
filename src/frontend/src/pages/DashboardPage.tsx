@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DealStage } from '../backend';
 import { TrendingUp, Home, Users, DollarSign, CheckCircle } from 'lucide-react';
 import MonthlyPerformanceChart from '../components/MonthlyPerformanceChart';
+import PageQueryErrorState from '../components/PageQueryErrorState';
 
 export default function DashboardPage() {
-  const { data: deals = [], isLoading } = useGetDeals();
+  const { data: deals = [], isLoading, isError, error, refetch } = useGetDeals();
   const { data: userProfile } = useGetCallerUserProfile();
 
   if (isLoading) {
@@ -16,6 +17,15 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageQueryErrorState
+        message={error?.message || 'Failed to load your deals. Please try again.'}
+        onRetry={refetch}
+      />
     );
   }
 
@@ -122,4 +132,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

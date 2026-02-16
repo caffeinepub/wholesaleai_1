@@ -1,34 +1,114 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Update membership page fallback pricing and enforce monthly display across plans",
+  "title": "Wholesale Lens — Startup profile recovery + Contact Us link + launch-ready polish (frontend)",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Align Membership page fallback pricing with new lower backend defaults so UI shows correct prices when catalog load fails.",
+      "id": "REQ-1",
+      "summary": "Make first-login profile loading resilient so brand-new authenticated users reach the app and see profile setup instead of a profile-load error.",
       "acceptanceCriteria": [
-        "When membership catalog fetch fails, the Membership page displays Basic $4.99/month, Pro $14.99/month, Enterprise $39.99/month using fallback pricing."
+        "After signing in with Internet Identity, the app does not show the StartupErrorScreen for profile loading under normal conditions.",
+        "For a brand-new user (no profile yet), the app reaches the main shell and displays the profile setup dialog (instead of failing with a profile-load error).",
+        "If access control initialization/permissions are the root cause, the backend must no longer trap/throw in a way that prevents first-time users from calling getCallerUserProfile / saving their profile.",
+        "Retry from the error screen successfully recovers when the underlying issue is transient (e.g., temporary network failure)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/MembershipPage.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update FALLBACK_PRICING to match the new backend defaults (in cents as bigint): Basic monthlyPriceCents=499n annualPriceCents=4999n; Pro monthlyPriceCents=1499n annualPriceCents=14999n; Enterprise monthlyPriceCents=3999n annualPriceCents=39999n. Keep sale fields disabled in fallbacks (isOnSale=false, salePriceCents=undefined) so the fallback UI matches the default non-sale behavior."
+          "description": "Harden the current-user profile query to distinguish between (a) missing profile (treat as `null`/needs setup) vs (b) genuine failures. Use the authorization component’s frontend guidance for actor-dependency loading state and avoiding profile-setup flash; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Adjust startup flow to (1) only show a profile-load failure screen for true errors, (2) allow brand-new users (missing profile) to proceed to AppShell + ProfileSetupDialog, and (3) ensure Retry triggers the correct refetch sequence without getting stuck. Use the authorization component’s recommended `showProfileSetup` gating pattern; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/ProfileSetupDialog.tsx",
+          "operation": "modify",
+          "description": "Ensure profile setup remains the recovery path for first-time users by improving error messaging and aligning save failures with the same recoverable/retry posture used elsewhere (without adding new features). Use the authorization component’s user profile setup expectations; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add a visible Contact Us action in the authenticated shell that opens an email draft to wholesalensrealestate@gmail.com via mailto.",
+      "acceptanceCriteria": [
+        "A \"Contact Us\" action is accessible from the main authenticated UI (e.g., in the sidebar/footer area).",
+        "Clicking \"Contact Us\" opens a new email draft addressed to wholesalensrealestate@gmail.com using a mailto link.",
+        "User-facing text is in English and matches the app’s existing styling."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/support.ts",
+          "operation": "create",
+          "description": "Create a small support helper that centralizes the support email address (wholesalensrealestate@gmail.com) and provides a safe mailto builder/open helper for reuse across the shell and startup error states."
+        },
+        {
+          "path": "frontend/src/components/AppShell.tsx",
+          "operation": "modify",
+          "description": "Add a clearly visible \"Contact Us\" action to the authenticated UI (e.g., in the sidebar footer near logout) that triggers a mailto draft to wholesalensrealestate@gmail.com using the shared support helper."
+        },
+        {
+          "path": "frontend/src/lib/copy.ts",
+          "operation": "modify",
+          "description": "Add English copy strings for support/contact actions (e.g., \"Contact Us\", \"Email Support\") so the new UI text is consistent with existing centralized copy usage."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add clear recovery paths when startup initialization/profile fetch fails, including Contact Us support access and preventing infinite loading states.",
+      "acceptanceCriteria": [
+        "Startup error screens provide a clear Retry action (existing) and also provide an obvious way to contact support (wholesalensrealestate@gmail.com) when issues persist.",
+        "No infinite loading state occurs during startup; the user either proceeds into the app, sees profile setup, or gets a recoverable error screen with Retry and Contact Us."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/StartupErrorScreen.tsx",
+          "operation": "modify",
+          "description": "Extend the startup error UI to include a secondary \"Contact Us\" action that opens a mailto draft to wholesalensrealestate@gmail.com (using the shared support helper), while keeping Retry prominent and consistent with existing styling."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add a startup watchdog to avoid infinite loading by converting excessively long actor/profile loading into a recoverable StartupErrorScreen state with Retry + Contact Us. Ensure this applies to both actor initialization and profile fetch stages without changing other product behavior."
+        },
+        {
+          "path": "frontend/src/components/PageQueryErrorState.tsx",
+          "operation": "modify",
+          "description": "Align generic data-load error presentation with the new support pathway by making it easy for pages to expose a consistent \"Contact Us\" secondary action (using the shared support helper) when appropriate."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Show monthly pricing period label for all membership plans, including Enterprise.",
+      "summary": "Polish authenticated shell and startup screens with a cohesive warm real-estate/ledger theme (typography, spacing, consistent buttons) without adding new features.",
       "acceptanceCriteria": [
-        "Enterprise plan card shows pricing with period label \"/ month\" (not \"/ year\").",
-        "Basic and Pro plan cards continue to show pricing with period label \"/ month\"."
+        "Visual styling updates are consistent across the sidebar, primary buttons, and startup screens.",
+        "Theme uses a coherent palette and typography treatment (do not introduce blue/purple as primary styling unless already present).",
+        "No functional behavior changes are introduced beyond UI polish."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/MembershipPage.tsx",
+          "path": "frontend/src/components/StartupLoadingScreen.tsx",
           "operation": "modify",
-          "description": "Adjust the Membership page plan configuration so Enterprise uses monthly pricing display (set Enterprise plan period to 'monthly' like Basic and Pro). Ensure the rendered period label remains \"month\" for all plan cards by using the existing getPriceDisplay(period='monthly') flow."
+          "description": "Refine spacing/typography and loading composition to feel more launch-ready and consistent with the warm palette already defined in theme tokens (no behavior changes)."
+        },
+        {
+          "path": "frontend/src/components/StartupErrorScreen.tsx",
+          "operation": "modify",
+          "description": "Apply cohesive visual polish (typography scale, spacing, card-like framing consistent with the app) while preserving existing Retry behavior and adding only the support link required by REQ-3."
+        },
+        {
+          "path": "frontend/src/components/AppShell.tsx",
+          "operation": "modify",
+          "description": "Polish sidebar/nav spacing and button consistency (hover/active states, borders, typography) to reinforce the existing warm theme while keeping current navigation behavior unchanged."
+        },
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Apply small global typography/rendering polish (e.g., font smoothing, consistent base text rhythm) using existing theme tokens and avoiding new primary hues."
         }
       ]
     }

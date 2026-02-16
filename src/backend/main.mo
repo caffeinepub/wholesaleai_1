@@ -1,22 +1,25 @@
 import Array "mo:core/Array";
 import Text "mo:core/Text";
 import Iter "mo:core/Iter";
-import List "mo:core/List";
 import Order "mo:core/Order";
 import Map "mo:core/Map";
 import Time "mo:core/Time";
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Float "mo:core/Float";
+
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
+import List "mo:core/List";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
-import Migration "migration";
+import Stripe "stripe/stripe";
+import OutCall "http-outcalls/outcall";
 
-(with migration = Migration.run)
+// NEW MONTHLY PRICES: Basic: $6.99, Pro: $19.99, Enterprise: $59.99
+
 actor {
   include MixinStorage();
 
@@ -51,6 +54,20 @@ actor {
     phone : Text;
     email : Text;
     membershipTier : MembershipTier;
+  };
+
+  public type PaymentConfiguration = {
+    secretKey : Text;
+    allowedCountries : [Text];
+  };
+
+  public type PaymentSession = {
+    sessionId : Text;
+    userId : Principal;
+    membershipTier : MembershipTier;
+    isAnnual : Bool;
+    createdAt : Int;
+    status : { #pending; #completed; #failed : { error : Text } };
   };
 
   // Deal stages
@@ -143,6 +160,9 @@ actor {
     profitByZipCode : [(Text, Nat)];
   };
 
+  // Stripe integration
+  var stripeConfiguration : ?Stripe.StripeConfiguration = null;
+
   // Storage
   var nextDealId : Nat = 1;
   var nextBuyerId : Nat = 1;
@@ -152,23 +172,24 @@ actor {
   let deals = Map.empty<Nat, Deal>();
   let buyers = Map.empty<Nat, Buyer>();
   let contracts = Map.empty<Nat, ContractDocument>();
+  let paymentSessions = Map.empty<Text, PaymentSession>();
 
   // Membership catalog state
   var membershipCatalog : MembershipCatalog = {
     basic = {
-      monthlyPriceCents = 499;
+      monthlyPriceCents = 699;
       annualPriceCents = 4999;
       isOnSale = false;
       salePriceCents = null;
     };
     pro = {
-      monthlyPriceCents = 1499;
+      monthlyPriceCents = 1999;
       annualPriceCents = 14999;
       isOnSale = false;
       salePriceCents = null;
     };
     enterprise = {
-      monthlyPriceCents = 3999;
+      monthlyPriceCents = 5999;
       annualPriceCents = 39999;
       isOnSale = false;
       salePriceCents = null;
@@ -221,12 +242,30 @@ actor {
     userBuyers;
   };
 
+  // Helper: Initialize default profile for new users
+  func initializeDefaultProfile(caller : Principal) : UserProfile {
+    let defaultProfile : UserProfile = {
+      name = "";
+      phone = "";
+      email = "";
+      membershipTier = #Basic;
+    };
+    userProfiles.add(caller, defaultProfile);
+    defaultProfile;
+  };
+
   // User Profile Management
-  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+  public query ({ caller }) func getCallerUserProfile() : async UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
     };
-    userProfiles.get(caller);
+    switch (userProfiles.get(caller)) {
+      case (?profile) { profile };
+      case (null) {
+        // Initialize default profile for brand-new users
+        initializeDefaultProfile(caller);
+      };
+    };
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
@@ -852,8 +891,8 @@ actor {
 
   // Public query for frontend to get current membership catalog
   // This is accessible to all users including guests to allow browsing pricing
-  public query ({ caller }) func getMembershipCatalog() : async ?MembershipCatalog {
-    ?membershipCatalog;
+  public query func getMembershipCatalog() : async MembershipCatalog {
+    membershipCatalog;
   };
 
   // Admin operation to update membership pricing
@@ -890,6 +929,107 @@ actor {
           profile with membershipTier = tier;
         };
         userProfiles.add(userId, updatedProfile);
+      };
+    };
+  };
+
+  // Stripe Configuration Management
+  public query func isStripeConfigured() : async Bool {
+    stripeConfiguration != null;
+  };
+
+  public shared ({ caller }) func setStripeConfiguration(config : Stripe.StripeConfiguration) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can perform this action");
+    };
+    stripeConfiguration := ?config;
+  };
+
+  func getStripeConfiguration() : Stripe.StripeConfiguration {
+    switch (stripeConfiguration) {
+      case (null) { Runtime.trap("Stripe needs to be first configured") };
+      case (?value) { value };
+    };
+  };
+
+  public query func transform(input : OutCall.TransformationInput) : async OutCall.TransformationOutput {
+    OutCall.transform(input);
+  };
+
+  // Membership Payment & Access Control
+
+  public shared ({ caller }) func createCheckoutSession(items : [Stripe.ShoppingItem], successUrl : Text, cancelUrl : Text) : async Text {
+    await Stripe.createCheckoutSession(getStripeConfiguration(), caller, items, successUrl, cancelUrl, transform);
+  };
+
+  // Called by frontend to finalize membership after payment is confirmed
+  public shared ({ caller }) func confirmMembershipPurchased(sessionId : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can confirm memberships");
+    };
+
+    switch (paymentSessions.get(sessionId)) {
+      case (null) { Runtime.trap("Invalid payment session") };
+      case (?session) {
+        // Verify caller owns this session
+        if (caller != session.userId) {
+          Runtime.trap("Unauthorized: Only the user who created the session can confirm it");
+        };
+
+        // Payment verified - now grant membership
+        switch (userProfiles.get(session.userId)) {
+          case (null) {
+            Runtime.trap("User profile not found. Please create a profile first.");
+          };
+          case (?existingProfile) {
+            let updatedProfile : UserProfile = {
+              existingProfile with
+              membershipTier = session.membershipTier;
+            };
+            userProfiles.add(session.userId, updatedProfile);
+
+            // Update session status to completed
+            let completedSession : PaymentSession = {
+              session with status = #completed;
+            };
+            paymentSessions.add(sessionId, completedSession);
+          };
+        };
+      };
+    };
+  };
+
+  // Stripe payment status checking (admin or session owner only)
+  public shared ({ caller }) func getStripeSessionStatus(sessionId : Text) : async Stripe.StripeSessionStatus {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can check session status");
+    };
+
+    // Verify caller is admin or session owner
+    switch (paymentSessions.get(sessionId)) {
+      case (null) { Runtime.trap("Session not found") };
+      case (?session) {
+        if (caller != session.userId and not AccessControl.isAdmin(accessControlState, caller)) {
+          Runtime.trap("Unauthorized: Can only check status of your own payment sessions");
+        };
+        await Stripe.getSessionStatus(getStripeConfiguration(), sessionId, transform);
+      };
+    };
+  };
+
+  // Function to get payment session (admin or session owner only)
+  public query ({ caller }) func getPaymentSession(sessionId : Text) : async ?PaymentSession {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view payment sessions");
+    };
+
+    switch (paymentSessions.get(sessionId)) {
+      case (null) { null };
+      case (?session) {
+        if (caller != session.userId and not AccessControl.isAdmin(accessControlState, caller)) {
+          Runtime.trap("Unauthorized: Can only view your own payment sessions");
+        };
+        ?session;
       };
     };
   };

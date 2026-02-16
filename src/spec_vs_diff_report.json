@@ -1,40 +1,42 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T19:10:28.600Z",
-  "summary": "REQ-3 and REQ-4 appear implemented in MembershipPage (new fallback prices and all plans shown as monthly). Backend default prices were updated to the new values and upgrade migration logic was added, but the change set appears to violate the stated constraint that all backend logic must remain in backend/main.mo by introducing backend/migration.mo; additionally, due to truncation, some REQ-1 details (e.g., lastUpdated and enterprise salePriceCents field) cannot be fully verified from the provided snippet.",
+  "generatedAt": "2026-02-16T20:04:50.292Z",
+  "summary": "Most frontend requirements (Contact Us via mailto, startup recovery paths, and theme polish) appear implemented. However, the core backend-side fix for first-time profile initialization is not evidenced in the provided backend diff excerpt, and there is an unrequested/forbidden-looking change related to membership pricing.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Keep sale fields disabled by default (isOnSale=false, salePriceCents=null) and update lastUpdated accordingly in the default backend membershipCatalog.",
-      "reason": "The backend/main.mo snippet is truncated mid-way through the enterprise pricing object (shows `isOnSale = false; s...`), and the `lastUpdated` field for the default catalog is not visible, so it cannot be confirmed from the diff summary that enterprise.salePriceCents is null and that lastUpdated is set/updated.",
+      "requirement": "Fix the startup error by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users with no existing profile yet, and avoid backend traps/throws that block getCallerUserProfile / saving profile.",
+      "reason": "The frontend hooks assume the backend now \"auto-initializes profiles\" and returns an empty profile for new users, but the backend diff excerpt is truncated and does not show any implementation of getCallerUserProfile/saveCallerUserProfile changes, profile initialization logic, or access-control adjustments to prevent traps for first-time users.",
       "evidence": [
-        "backend/main.mo (truncated)"
+        "backend/main.mo (truncated)",
+        "frontend/src/hooks/useQueries.ts (comment: \"Backend now auto-initializes profiles\")"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Introduced a separate backend migration module file (backend/migration.mo) and wired it into backend/main.mo via `(with migration = Migration.run)`, which adds backend logic outside backend/main.mo.",
-      "reason": "BuildRequest constraint states: \"Backend must remain a single Motoko actor (all logic in backend/main.mo).\" Adding backend/migration.mo places logic outside main.mo, even if it supports REQ-2.",
+      "description": "Membership pricing changes (e.g., new monthly prices Basic $6.99, Pro $19.99, Enterprise $59.99).",
+      "reason": "BuildRequest non-goals explicitly prohibit changing membership pricing beyond what is required to fix profile loading; the diff shows an explicit note indicating new prices, which is unrelated to the requested profile-load/contact-us/reliability/theme work.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Added UI behavior for catalog fetch failure: a non-blocking error toast shown only once (useEffect + ref) with a specific message.",
-      "reason": "REQ-3 only asked to update fallback pricing values; it did not request new toast/error-notification behavior.",
-      "evidence": [
-        "frontend/src/pages/MembershipPage.tsx"
+        "backend/main.mo (comment: \"// NEW MONTHLY PRICES: Basic: $6.99, Pro: $19.99, Enterprise: $59.99\")"
       ]
     }
   ],
-  "confidence": 0.66,
+  "confidence": 0.68,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AppShell.tsx",
+    "frontend/src/components/PageQueryErrorState.tsx",
+    "frontend/src/components/ProfileSetupDialog.tsx",
+    "frontend/src/components/StartupErrorScreen.tsx",
+    "frontend/src/components/StartupLoadingScreen.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/lib/copy.ts",
+    "frontend/src/lib/support.ts",
     "frontend/src/pages/MembershipPage.tsx",
     "project_state.json"
   ]

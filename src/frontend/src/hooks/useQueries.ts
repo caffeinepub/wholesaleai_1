@@ -13,29 +13,60 @@ import type {
   MembershipCatalog,
   MembershipPricing,
   MembershipTier,
+  ShoppingItem,
+  StripeConfiguration,
+  PaymentSession,
+  StripeSessionStatus,
 } from '../backend';
 import { ExternalBlob } from '../backend';
 import { Principal } from '@dfinity/principal';
 
+// Helper to normalize backend errors
+function normalizeError(error: any): Error {
+  const message = error?.message || String(error);
+  
+  if (message.includes('Unauthorized') || message.includes('requires')) {
+    return new Error('You do not have permission to access this feature. Please check your membership tier or contact support.');
+  }
+  
+  if (message.includes('not found')) {
+    return new Error('The requested resource was not found.');
+  }
+  
+  if (message.includes('network') || message.includes('fetch')) {
+    return new Error('Network error. Please check your connection and try again.');
+  }
+  
+  return new Error('An unexpected error occurred. Please try again.');
+}
+
 // User Profile
 export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching, isError: actorError } = useBackendActor();
+  const { actor, actorReady, isLoading: actorLoading } = useBackendActor();
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
+      try {
+        const profile = await actor.getCallerUserProfile();
+        // Backend now auto-initializes profiles, so check if name is empty (needs setup)
+        if (!profile.name || profile.name.trim() === '') {
+          return null; // Treat empty profile as needing setup
+        }
+        return profile;
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
-    enabled: !!actor && !actorFetching,
-    retry: 1,
+    enabled: actorReady,
+    retry: false, // Don't retry profile fetch - either it works or we show setup
   });
 
   return {
     ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-    isError: actorError || query.isError,
+    isLoading: actorLoading || query.isLoading,
+    isFetched: actorReady && query.isFetched,
   };
 }
 
@@ -45,8 +76,12 @@ export function useSaveCallerUserProfile() {
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerUserProfile(profile);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.saveCallerUserProfile(profile);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
@@ -54,39 +89,57 @@ export function useSaveCallerUserProfile() {
   });
 }
 
+// Admin checks
+export function useIsCallerAdmin() {
+  const { actor, actorReady } = useBackendActor();
+
+  return useQuery<boolean>({
+    queryKey: ['isCallerAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      try {
+        return await actor.isCallerAdmin();
+      } catch (error: any) {
+        return false;
+      }
+    },
+    enabled: actorReady,
+  });
+}
+
 // Deals
 export function useGetDeals() {
-  const { actor, isFetching } = useBackendActor();
+  const { actor, actorReady, isLoading: actorLoading } = useBackendActor();
 
   return useQuery<Deal[]>({
     queryKey: ['deals'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) return [];
       try {
         return await actor.listDeals();
       } catch (error: any) {
-        // Check if it's an authorization error
-        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
-          throw new Error('You do not have permission to view deals');
-        }
-        throw error;
+        throw normalizeError(error);
       }
     },
-    enabled: !!actor && !isFetching,
+    enabled: actorReady,
     retry: 1,
   });
 }
 
 export function useGetDeal(dealId: bigint | null) {
-  const { actor, isFetching } = useBackendActor();
+  const { actor, actorReady } = useBackendActor();
 
   return useQuery<Deal | null>({
     queryKey: ['deal', dealId?.toString()],
     queryFn: async () => {
       if (!actor || !dealId) return null;
-      return actor.getDeal(dealId);
+      try {
+        return await actor.getDeal(dealId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
-    enabled: !!actor && !isFetching && dealId !== null,
+    enabled: actorReady && dealId !== null,
   });
 }
 
@@ -106,18 +159,22 @@ export function useCreateDeal() {
       notes: string;
       estimatedProfit: bigint;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.createDeal(
-        params.sellerName,
-        params.sellerPhone,
-        params.address,
-        params.arv,
-        params.repairs,
-        params.askingPrice,
-        params.yourOffer,
-        params.notes,
-        params.estimatedProfit
-      );
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.createDeal(
+          params.sellerName,
+          params.sellerPhone,
+          params.address,
+          params.arv,
+          params.repairs,
+          params.askingPrice,
+          params.yourOffer,
+          params.notes,
+          params.estimatedProfit
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -146,23 +203,27 @@ export function useUpdateDeal() {
       estimatedProfit: bigint;
       actualProfit: bigint | null;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateDeal(
-        params.dealId,
-        params.stage,
-        params.sellerName,
-        params.sellerPhone,
-        params.address,
-        params.arv,
-        params.repairs,
-        params.askingPrice,
-        params.yourOffer,
-        params.assignedBuyer,
-        params.contractDeadline,
-        params.notes,
-        params.estimatedProfit,
-        params.actualProfit
-      );
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.updateDeal(
+          params.dealId,
+          params.stage,
+          params.sellerName,
+          params.sellerPhone,
+          params.address,
+          params.arv,
+          params.repairs,
+          params.askingPrice,
+          params.yourOffer,
+          params.assignedBuyer,
+          params.contractDeadline,
+          params.notes,
+          params.estimatedProfit,
+          params.actualProfit
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -177,8 +238,12 @@ export function useDeleteDeal() {
 
   return useMutation({
     mutationFn: async (dealId: bigint) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteDeal(dealId);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.deleteDeal(dealId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -192,8 +257,12 @@ export function useMoveDealToStage() {
 
   return useMutation({
     mutationFn: async (params: { dealId: bigint; newStage: DealStage }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.moveDealToStage(params.dealId, params.newStage);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.moveDealToStage(params.dealId, params.newStage);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -208,8 +277,12 @@ export function useAnalyzeDeal() {
 
   return useMutation({
     mutationFn: async (address: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.analyzeDeal(address);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.analyzeDeal(address);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
   });
 }
@@ -224,12 +297,16 @@ export function useCreateDealFromAnalysis() {
       sellerName: string;
       sellerPhone: string;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.createDealFromAnalysis(
-        params.analysis,
-        params.sellerName,
-        params.sellerPhone
-      );
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.createDealFromAnalysis(
+          params.analysis,
+          params.sellerName,
+          params.sellerPhone
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -239,37 +316,37 @@ export function useCreateDealFromAnalysis() {
 
 // Buyers
 export function useGetBuyers() {
-  const { actor, isFetching } = useBackendActor();
+  const { actor, actorReady } = useBackendActor();
 
   return useQuery<Buyer[]>({
     queryKey: ['buyers'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) return [];
       try {
         return await actor.listBuyers();
       } catch (error: any) {
-        // Check if it's an authorization error
-        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
-          throw new Error('You do not have permission to view buyers');
-        }
-        throw error;
+        throw normalizeError(error);
       }
     },
-    enabled: !!actor && !isFetching,
+    enabled: actorReady,
     retry: 1,
   });
 }
 
 export function useGetBuyer(buyerId: bigint | null) {
-  const { actor, isFetching } = useBackendActor();
+  const { actor, actorReady } = useBackendActor();
 
   return useQuery<Buyer | null>({
     queryKey: ['buyer', buyerId?.toString()],
     queryFn: async () => {
       if (!actor || !buyerId) return null;
-      return actor.getBuyer(buyerId);
+      try {
+        return await actor.getBuyer(buyerId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
-    enabled: !!actor && !isFetching && buyerId !== null,
+    enabled: actorReady && buyerId !== null,
   });
 }
 
@@ -288,17 +365,21 @@ export function useCreateBuyer() {
       propertyTypePreference: string;
       notes: string;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.createBuyer(
-        params.name,
-        params.phone,
-        params.email,
-        params.preferredAreas,
-        params.budgetMin,
-        params.budgetMax,
-        params.propertyTypePreference,
-        params.notes
-      );
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.createBuyer(
+          params.name,
+          params.phone,
+          params.email,
+          params.preferredAreas,
+          params.budgetMin,
+          params.budgetMax,
+          params.propertyTypePreference,
+          params.notes
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buyers'] });
@@ -322,18 +403,22 @@ export function useUpdateBuyer() {
       propertyTypePreference: string;
       notes: string;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateBuyer(
-        params.buyerId,
-        params.name,
-        params.phone,
-        params.email,
-        params.preferredAreas,
-        params.budgetMin,
-        params.budgetMax,
-        params.propertyTypePreference,
-        params.notes
-      );
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.updateBuyer(
+          params.buyerId,
+          params.name,
+          params.phone,
+          params.email,
+          params.preferredAreas,
+          params.budgetMin,
+          params.budgetMax,
+          params.propertyTypePreference,
+          params.notes
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buyers'] });
@@ -348,8 +433,12 @@ export function useDeleteBuyer() {
 
   return useMutation({
     mutationFn: async (buyerId: bigint) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteBuyer(buyerId);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.deleteBuyer(buyerId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buyers'] });
@@ -363,8 +452,12 @@ export function useAssignBuyerToDeal() {
 
   return useMutation({
     mutationFn: async (params: { dealId: bigint; buyerId: bigint }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.assignBuyerToDeal(params.dealId, params.buyerId);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.assignBuyerToDeal(params.dealId, params.buyerId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
@@ -375,7 +468,7 @@ export function useAssignBuyerToDeal() {
 
 // Contracts
 export function useGetContractsByDeal(dealId: bigint | null) {
-  const { actor, isFetching } = useBackendActor();
+  const { actor, actorReady } = useBackendActor();
 
   return useQuery<ContractDocument[]>({
     queryKey: ['contracts', dealId?.toString()],
@@ -384,14 +477,10 @@ export function useGetContractsByDeal(dealId: bigint | null) {
       try {
         return await actor.listContractsByDeal(dealId);
       } catch (error: any) {
-        // Check if it's an authorization error
-        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
-          throw new Error('You do not have permission to view contracts');
-        }
-        throw error;
+        throw normalizeError(error);
       }
     },
-    enabled: !!actor && !isFetching && dealId !== null,
+    enabled: actorReady && dealId !== null,
     retry: 1,
   });
 }
@@ -409,15 +498,19 @@ export function useUploadContract() {
       emd: bigint | null;
       blob: ExternalBlob;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.uploadContract(
-        params.dealId,
-        params.documentType,
-        params.fileName,
-        params.closingDate,
-        params.emd,
-        params.blob
-      );
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.uploadContract(
+          params.dealId,
+          params.documentType,
+          params.fileName,
+          params.closingDate,
+          params.emd,
+          params.blob
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contracts', variables.dealId.toString()] });
@@ -436,13 +529,17 @@ export function useUpdateContractStatus() {
       closingDate: bigint | null;
       emd: bigint | null;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateContractStatus(
-        params.contractId,
-        params.signingStatus,
-        params.closingDate,
-        params.emd
-      );
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.updateContractStatus(
+          params.contractId,
+          params.signingStatus,
+          params.closingDate,
+          params.emd
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -452,7 +549,7 @@ export function useUpdateContractStatus() {
 
 // Analytics
 export function useGetAnalytics() {
-  const { actor, isFetching } = useBackendActor();
+  const { actor, actorReady } = useBackendActor();
 
   return useQuery<AnalyticsData>({
     queryKey: ['analytics'],
@@ -461,55 +558,29 @@ export function useGetAnalytics() {
       try {
         return await actor.getAnalytics();
       } catch (error: any) {
-        // Check if it's an authorization error
-        if (error.message?.includes('Unauthorized') || error.message?.includes('requires')) {
-          throw new Error('You do not have permission to view analytics');
-        }
-        throw error;
+        throw normalizeError(error);
       }
     },
-    enabled: !!actor && !isFetching,
+    enabled: actorReady,
     retry: 1,
   });
 }
 
-// Membership Catalog
+// Membership
 export function useGetMembershipCatalog() {
-  const { actor, isFetching } = useBackendActor();
+  const { actor, actorReady } = useBackendActor();
 
-  return useQuery<MembershipCatalog | null>({
+  return useQuery<MembershipCatalog>({
     queryKey: ['membershipCatalog'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
       try {
         return await actor.getMembershipCatalog();
       } catch (error: any) {
-        console.error('Failed to fetch membership catalog:', error);
-        throw error;
+        throw normalizeError(error);
       }
     },
-    enabled: !!actor && !isFetching,
-    retry: 1,
-  });
-}
-
-// Admin Operations
-export function useIsCallerAdmin() {
-  const { actor, isFetching } = useBackendActor();
-
-  return useQuery<boolean>({
-    queryKey: ['isAdmin'],
-    queryFn: async () => {
-      if (!actor) return false;
-      try {
-        return await actor.isCallerAdmin();
-      } catch (error) {
-        console.error('Failed to check admin status:', error);
-        return false;
-      }
-    },
-    enabled: !!actor && !isFetching,
-    retry: false,
+    enabled: actorReady,
   });
 }
 
@@ -523,8 +594,16 @@ export function useUpdateMembershipPricing() {
       pro: MembershipPricing;
       enterprise: MembershipPricing;
     }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateMembershipPricing(params.basic, params.pro, params.enterprise);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.updateMembershipPricing(
+          params.basic,
+          params.pro,
+          params.enterprise
+        );
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['membershipCatalog'] });
@@ -538,11 +617,114 @@ export function useUpdateMembershipTier() {
 
   return useMutation({
     mutationFn: async (params: { userId: Principal; tier: MembershipTier }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.updateMembershipTier(params.userId, params.tier);
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.updateMembershipTier(params.userId, params.tier);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}
+
+// Stripe
+export function useIsStripeConfigured() {
+  const { actor, actorReady } = useBackendActor();
+
+  return useQuery<boolean>({
+    queryKey: ['stripeConfigured'],
+    queryFn: async () => {
+      if (!actor) return false;
+      try {
+        return await actor.isStripeConfigured();
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
+    },
+    enabled: actorReady,
+  });
+}
+
+export function useSetStripeConfiguration() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (config: StripeConfiguration) => {
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.setStripeConfiguration(config);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stripeConfigured'] });
+    },
+  });
+}
+
+export function useCreateCheckoutSession() {
+  const { actor } = useBackendActor();
+
+  return useMutation({
+    mutationFn: async (params: {
+      items: ShoppingItem[];
+      successUrl: string;
+      cancelUrl: string;
+    }) => {
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        const result = await actor.createCheckoutSession(
+          params.items,
+          params.successUrl,
+          params.cancelUrl
+        );
+        const session = JSON.parse(result) as { id: string; url: string };
+        if (!session?.url) {
+          throw new Error('Stripe session missing url');
+        }
+        return session;
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
+    },
+  });
+}
+
+export function useConfirmMembershipPurchased() {
+  const { actor } = useBackendActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.confirmMembershipPurchased(sessionId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}
+
+export function useGetStripeSessionStatus() {
+  const { actor } = useBackendActor();
+
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      if (!actor) throw new Error('Backend not available. Please refresh the page.');
+      try {
+        return await actor.getStripeSessionStatus(sessionId);
+      } catch (error: any) {
+        throw normalizeError(error);
+      }
     },
   });
 }

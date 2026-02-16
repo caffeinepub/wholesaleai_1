@@ -1,22 +1,40 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Stabilize the app for launch: fix profile loading error, ensure all content/pages load reliably, and add a Contact Us option with the provided email.",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Users see error: \"Failed to load your profile. This may be a temporary issue.\""
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-frontend-membership-pricing-fallbacks-to-match-the-new-backend-defaults-so-the-ui-shows-the-new-lower-prices-whenever-catalog-loading-fails-update-fallback-pricing-in-membershippage",
-      "title": "Update the frontend membership pricing fallbacks to match the new backend defaults so the UI shows the new lower prices whenever catalog loading fails (update FALLBACK_PRICING in MembershipPage).",
+      "id": "feature-fix-the-startup-error-failed-to-load-your-profile-this-may-be-a-temporary-issue-by-ensuring-authenticated-users-can-successfully-fetch-and-if-needed-initialize-their-caller-profile-on-first-login-including-brand-new-users-who-have-no-existing-profile-yet",
+      "title": "Fix the startup error \"Failed to load your profile. This may be a temporary issue.\" by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users who have no existing profile yet.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-visible-contact-us-option-in-the-authenticated-app-ui-that-opens-the-user-s-email-client-to-email-wholesalensrealestate-gmail-com-e-g-via-a-mailto-link",
+      "title": "Add a visible \"Contact Us\" option in the authenticated app UI that opens the user’s email client to email wholesalensrealestate@gmail.com (e.g., via a mailto: link).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-launch-reliability-by-adding-user-facing-recovery-paths-when-critical-startup-queries-fail-actor-initialization-and-profile-fetch-including-a-support-pathway-that-points-users-to-the-new-contact-us-email-when-startup-errors-persist",
+      "title": "Improve launch reliability by adding user-facing recovery paths when critical startup queries fail (actor initialization and profile fetch), including a support pathway that points users to the new Contact Us email when startup errors persist.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-membership-page-to-show-monthly-pricing-for-all-plans-including-enterprise-so-the-displayed-period-is-always-per-month",
-      "title": "Update the Membership page to show monthly pricing for all plans (including Enterprise) so the displayed period is always per month.",
+      "id": "feature-apply-a-cohesive-launch-ready-visual-theme-polish-across-the-authenticated-shell-and-startup-screens-typography-spacing-and-a-warm-real-estate-ledger-feel-keeping-the-current-branding-and-avoiding-introducing-new-product-features",
+      "title": "Apply a cohesive, launch-ready visual theme polish across the authenticated shell and startup screens (typography, spacing, and a warm real-estate/ledger feel), keeping the current branding and avoiding introducing new product features.",
       "reqIds": [
         "REQ-4"
       ],
@@ -26,28 +44,18 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Lower membership pricing; keep monthly pricing option",
+      "summary": "Add a 'Contact Us' section/link that emails wholesalensrealestate@gmail.com",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Update the backend default membership catalog pricing to be significantly lower than the current defaults, using these new values (in cents): Basic monthly=499, annual=4999; Pro monthly=1499, annual=14999; Enterprise monthly=3999, annual=39999. Keep sale fields disabled by default (isOnSale=false, salePriceCents=null) and update lastUpdated accordingly.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Ensure existing deployments also get the new lower defaults on upgrade by adding upgrade logic that conditionally rewrites the stored membershipCatalog only when it still matches the previous default values (Basic 2999/29999, Pro 8999/89999, Enterprise 29999/299999). Do not overwrite pricing if an admin has already customized it.",
-      "reqIds": [
-        "REQ-2"
-      ],
+      "summary": "Improve app reliability/performance so everything loads correctly and is launch-ready for going live",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Deal Memberships",
+  "projectName": "Wholesale Lens",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

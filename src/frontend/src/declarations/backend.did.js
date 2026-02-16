@@ -46,6 +46,13 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const ShoppingItem = IDL.Record({
+  'productName' : IDL.Text,
+  'currency' : IDL.Text,
+  'quantity' : IDL.Nat,
+  'priceInCents' : IDL.Nat,
+  'productDescription' : IDL.Text,
+});
 export const AnalyticsData = IDL.Record({
   'closeRate' : IDL.Float64,
   'averageAssignmentFee' : IDL.Float64,
@@ -133,6 +140,47 @@ export const MembershipCatalog = IDL.Record({
   'lastUpdated' : IDL.Int,
   'basic' : MembershipPricing,
 });
+export const PaymentSession = IDL.Record({
+  'status' : IDL.Variant({
+    'pending' : IDL.Null,
+    'completed' : IDL.Null,
+    'failed' : IDL.Record({ 'error' : IDL.Text }),
+  }),
+  'userId' : IDL.Principal,
+  'createdAt' : IDL.Int,
+  'sessionId' : IDL.Text,
+  'isAnnual' : IDL.Bool,
+  'membershipTier' : MembershipTier,
+});
+export const StripeSessionStatus = IDL.Variant({
+  'completed' : IDL.Record({
+    'userPrincipal' : IDL.Opt(IDL.Text),
+    'response' : IDL.Text,
+  }),
+  'failed' : IDL.Record({ 'error' : IDL.Text }),
+});
+export const StripeConfiguration = IDL.Record({
+  'allowedCountries' : IDL.Vec(IDL.Text),
+  'secretKey' : IDL.Text,
+});
+export const http_header = IDL.Record({
+  'value' : IDL.Text,
+  'name' : IDL.Text,
+});
+export const http_request_result = IDL.Record({
+  'status' : IDL.Nat,
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(http_header),
+});
+export const TransformationInput = IDL.Record({
+  'context' : IDL.Vec(IDL.Nat8),
+  'response' : http_request_result,
+});
+export const TransformationOutput = IDL.Record({
+  'status' : IDL.Nat,
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(http_header),
+});
 
 export const idlService = IDL.Service({
   '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -165,6 +213,7 @@ export const idlService = IDL.Service({
   'analyzeDeal' : IDL.Func([IDL.Text], [DealAnalysis], []),
   'assignBuyerToDeal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'confirmMembershipPurchased' : IDL.Func([IDL.Text], [], []),
   'createBuyer' : IDL.Func(
       [
         IDL.Text,
@@ -177,6 +226,11 @@ export const idlService = IDL.Service({
         IDL.Text,
       ],
       [IDL.Nat],
+      [],
+    ),
+  'createCheckoutSession' : IDL.Func(
+      [IDL.Vec(ShoppingItem), IDL.Text, IDL.Text],
+      [IDL.Text],
       [],
     ),
   'createDeal' : IDL.Func(
@@ -203,21 +257,24 @@ export const idlService = IDL.Service({
   'deleteDeal' : IDL.Func([IDL.Nat], [], []),
   'getAnalytics' : IDL.Func([], [AnalyticsData], ['query']),
   'getBuyer' : IDL.Func([IDL.Nat], [IDL.Opt(Buyer)], ['query']),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserProfile' : IDL.Func([], [UserProfile], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getContract' : IDL.Func([IDL.Nat], [IDL.Opt(ContractDocument)], ['query']),
   'getDeal' : IDL.Func([IDL.Nat], [IDL.Opt(Deal)], ['query']),
-  'getMembershipCatalog' : IDL.Func(
-      [],
-      [IDL.Opt(MembershipCatalog)],
+  'getMembershipCatalog' : IDL.Func([], [MembershipCatalog], ['query']),
+  'getPaymentSession' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(PaymentSession)],
       ['query'],
     ),
+  'getStripeSessionStatus' : IDL.Func([IDL.Text], [StripeSessionStatus], []),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isStripeConfigured' : IDL.Func([], [IDL.Bool], ['query']),
   'listBuyers' : IDL.Func([], [IDL.Vec(Buyer)], ['query']),
   'listContractsByDeal' : IDL.Func(
       [IDL.Nat],
@@ -227,6 +284,12 @@ export const idlService = IDL.Service({
   'listDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
   'moveDealToStage' : IDL.Func([IDL.Nat, DealStage], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setStripeConfiguration' : IDL.Func([StripeConfiguration], [], []),
+  'transform' : IDL.Func(
+      [TransformationInput],
+      [TransformationOutput],
+      ['query'],
+    ),
   'updateBuyer' : IDL.Func(
       [
         IDL.Nat,
@@ -336,6 +399,13 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const ShoppingItem = IDL.Record({
+    'productName' : IDL.Text,
+    'currency' : IDL.Text,
+    'quantity' : IDL.Nat,
+    'priceInCents' : IDL.Nat,
+    'productDescription' : IDL.Text,
+  });
   const AnalyticsData = IDL.Record({
     'closeRate' : IDL.Float64,
     'averageAssignmentFee' : IDL.Float64,
@@ -426,6 +496,44 @@ export const idlFactory = ({ IDL }) => {
     'lastUpdated' : IDL.Int,
     'basic' : MembershipPricing,
   });
+  const PaymentSession = IDL.Record({
+    'status' : IDL.Variant({
+      'pending' : IDL.Null,
+      'completed' : IDL.Null,
+      'failed' : IDL.Record({ 'error' : IDL.Text }),
+    }),
+    'userId' : IDL.Principal,
+    'createdAt' : IDL.Int,
+    'sessionId' : IDL.Text,
+    'isAnnual' : IDL.Bool,
+    'membershipTier' : MembershipTier,
+  });
+  const StripeSessionStatus = IDL.Variant({
+    'completed' : IDL.Record({
+      'userPrincipal' : IDL.Opt(IDL.Text),
+      'response' : IDL.Text,
+    }),
+    'failed' : IDL.Record({ 'error' : IDL.Text }),
+  });
+  const StripeConfiguration = IDL.Record({
+    'allowedCountries' : IDL.Vec(IDL.Text),
+    'secretKey' : IDL.Text,
+  });
+  const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
+  const http_request_result = IDL.Record({
+    'status' : IDL.Nat,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(http_header),
+  });
+  const TransformationInput = IDL.Record({
+    'context' : IDL.Vec(IDL.Nat8),
+    'response' : http_request_result,
+  });
+  const TransformationOutput = IDL.Record({
+    'status' : IDL.Nat,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(http_header),
+  });
   
   return IDL.Service({
     '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -458,6 +566,7 @@ export const idlFactory = ({ IDL }) => {
     'analyzeDeal' : IDL.Func([IDL.Text], [DealAnalysis], []),
     'assignBuyerToDeal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'confirmMembershipPurchased' : IDL.Func([IDL.Text], [], []),
     'createBuyer' : IDL.Func(
         [
           IDL.Text,
@@ -470,6 +579,11 @@ export const idlFactory = ({ IDL }) => {
           IDL.Text,
         ],
         [IDL.Nat],
+        [],
+      ),
+    'createCheckoutSession' : IDL.Func(
+        [IDL.Vec(ShoppingItem), IDL.Text, IDL.Text],
+        [IDL.Text],
         [],
       ),
     'createDeal' : IDL.Func(
@@ -496,21 +610,24 @@ export const idlFactory = ({ IDL }) => {
     'deleteDeal' : IDL.Func([IDL.Nat], [], []),
     'getAnalytics' : IDL.Func([], [AnalyticsData], ['query']),
     'getBuyer' : IDL.Func([IDL.Nat], [IDL.Opt(Buyer)], ['query']),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserProfile' : IDL.Func([], [UserProfile], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getContract' : IDL.Func([IDL.Nat], [IDL.Opt(ContractDocument)], ['query']),
     'getDeal' : IDL.Func([IDL.Nat], [IDL.Opt(Deal)], ['query']),
-    'getMembershipCatalog' : IDL.Func(
-        [],
-        [IDL.Opt(MembershipCatalog)],
+    'getMembershipCatalog' : IDL.Func([], [MembershipCatalog], ['query']),
+    'getPaymentSession' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(PaymentSession)],
         ['query'],
       ),
+    'getStripeSessionStatus' : IDL.Func([IDL.Text], [StripeSessionStatus], []),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isStripeConfigured' : IDL.Func([], [IDL.Bool], ['query']),
     'listBuyers' : IDL.Func([], [IDL.Vec(Buyer)], ['query']),
     'listContractsByDeal' : IDL.Func(
         [IDL.Nat],
@@ -520,6 +637,12 @@ export const idlFactory = ({ IDL }) => {
     'listDeals' : IDL.Func([], [IDL.Vec(Deal)], ['query']),
     'moveDealToStage' : IDL.Func([IDL.Nat, DealStage], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setStripeConfiguration' : IDL.Func([StripeConfiguration], [], []),
+    'transform' : IDL.Func(
+        [TransformationInput],
+        [TransformationOutput],
+        ['query'],
+      ),
     'updateBuyer' : IDL.Func(
         [
           IDL.Nat,

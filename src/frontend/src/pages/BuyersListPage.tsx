@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { useGetBuyers, useGetCallerUserProfile } from '../hooks/useQueries';
 import { MembershipTier } from '../backend';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import BuyerCard from '../components/BuyerCard';
 import BuyerEditorDialog from '../components/BuyerEditorDialog';
 import FeatureLock from '../components/FeatureLock';
+import PageQueryErrorState from '../components/PageQueryErrorState';
+import { COPY } from '../lib/copy';
 
 export default function BuyersListPage() {
   const { data: userProfile } = useGetCallerUserProfile();
-  const { data: buyers = [], isLoading } = useGetBuyers();
+  const { data: buyers = [], isLoading, isError, error, refetch } = useGetBuyers();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingBuyerId, setEditingBuyerId] = useState<bigint | null>(null);
 
@@ -18,22 +19,12 @@ export default function BuyersListPage() {
     userProfile?.membershipTier === MembershipTier.Pro ||
     userProfile?.membershipTier === MembershipTier.Enterprise;
 
-  const handleCreateBuyer = () => {
-    setEditingBuyerId(null);
-    setEditorOpen(true);
-  };
-
-  const handleEditBuyer = (buyerId: bigint) => {
-    setEditingBuyerId(buyerId);
-    setEditorOpen(true);
-  };
-
   if (!hasAccess) {
     return (
       <FeatureLock
         feature="Buyers List"
         requiredTier="Pro"
-        description="Store and manage your cash buyers list with one-click assignment to deals."
+        description="Manage your cash buyer network and assign deals to qualified buyers"
       />
     );
   }
@@ -49,12 +40,37 @@ export default function BuyersListPage() {
     );
   }
 
+  if (isError) {
+    const isMembershipError = error?.message?.includes('permission') || error?.message?.includes('membership');
+    
+    return (
+      <PageQueryErrorState
+        message={error?.message || 'Failed to load your buyers list. Please try again.'}
+        onRetry={refetch}
+        secondaryAction={isMembershipError ? {
+          label: 'View Membership Plans',
+          onClick: () => window.dispatchEvent(new CustomEvent('navigate-to-membership'))
+        } : undefined}
+      />
+    );
+  }
+
+  const handleCreateBuyer = () => {
+    setEditingBuyerId(null);
+    setEditorOpen(true);
+  };
+
+  const handleEditBuyer = (buyerId: bigint) => {
+    setEditingBuyerId(buyerId);
+    setEditorOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Buyers List</h1>
-          <p className="text-muted-foreground">Manage your cash buyers and assign them to deals</p>
+          <p className="text-muted-foreground">Manage your cash buyer network</p>
         </div>
         <Button onClick={handleCreateBuyer} className="bg-primary hover:bg-primary/90">
           <Plus className="mr-2 h-4 w-4" />
@@ -63,14 +79,13 @@ export default function BuyersListPage() {
       </div>
 
       {buyers.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-center">
-              No buyers yet. Add your first cash buyer to get started.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground mb-4">{COPY.empty.buyers}</p>
+          <Button onClick={handleCreateBuyer}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Your First Buyer
+          </Button>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {buyers.map((buyer) => (
@@ -93,4 +108,3 @@ export default function BuyersListPage() {
     </div>
   );
 }
-

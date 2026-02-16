@@ -1,97 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Lower membership prices and use monthly pricing across plans",
-  "projectName": "Deal Memberships",
-  "priority": "normal",
+  "title": "Fix profile load failure and add Contact Us email link for launch readiness",
+  "projectName": "Wholesale Lens",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the backend default membership catalog pricing to be significantly lower than the current defaults, using these new values (in cents): Basic monthly=499, annual=4999; Pro monthly=1499, annual=14999; Enterprise monthly=3999, annual=39999. Keep sale fields disabled by default (isOnSale=false, salePriceCents=null) and update lastUpdated accordingly.",
-      "target": "backend",
+      "text": "Fix the startup error \"Failed to load your profile. This may be a temporary issue.\" by ensuring authenticated users can successfully fetch (and if needed initialize) their caller profile on first login, including brand-new users who have no existing profile yet.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages-4"
         ],
         "quotes": [
-          "Change the prices to memberships way lower thanks monthly is fine I think"
+          "I'm getting this error Failed to load your profile. This may be a temporary issue."
         ]
       },
       "acceptanceCriteria": [
-        "A fresh canister install initializes membershipCatalog with Basic $4.99/mo ($49.99/yr), Pro $14.99/mo ($149.99/yr), Enterprise $39.99/mo ($399.99/yr).",
-        "Sale pricing remains disabled by default for all tiers (isOnSale=false, salePriceCents=null)."
+        "After signing in with Internet Identity, the app does not show the StartupErrorScreen for profile loading under normal conditions.",
+        "For a brand-new user (no profile yet), the app reaches the main shell and displays the profile setup dialog (instead of failing with a profile-load error).",
+        "If access control initialization/permissions are the root cause, the backend must no longer trap/throw in a way that prevents first-time users from calling getCallerUserProfile / saving their profile.",
+        "Retry from the error screen successfully recovers when the underlying issue is transient (e.g., temporary network failure)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure existing deployments also get the new lower defaults on upgrade by adding upgrade logic that conditionally rewrites the stored membershipCatalog only when it still matches the previous default values (Basic 2999/29999, Pro 8999/89999, Enterprise 29999/299999). Do not overwrite pricing if an admin has already customized it.",
-      "target": "backend",
+      "text": "Add a visible \"Contact Us\" option in the authenticated app UI that opens the user’s email client to email wholesalensrealestate@gmail.com (e.g., via a mailto: link).",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages-4"
         ],
         "quotes": [
-          "Change the prices to memberships way lower thanks monthly is fine I think"
+          "can I get a contact us with my email wholesalensrealestate@gmail.com"
         ]
       },
       "acceptanceCriteria": [
-        "After upgrade, if (and only if) the stored catalog matches the previous default prices, the catalog is updated to the new lower defaults.",
-        "After upgrade, if the stored catalog differs from the previous defaults (indicating admin customization), the catalog remains unchanged."
+        "A \"Contact Us\" action is accessible from the main authenticated UI (e.g., in the sidebar/footer area).",
+        "Clicking \"Contact Us\" opens a new email draft addressed to wholesalensrealestate@gmail.com using a mailto link.",
+        "User-facing text is in English and matches the app’s existing styling."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update the frontend membership pricing fallbacks to match the new backend defaults so the UI shows the new lower prices whenever catalog loading fails (update FALLBACK_PRICING in MembershipPage).",
+      "text": "Improve launch reliability by adding user-facing recovery paths when critical startup queries fail (actor initialization and profile fetch), including a support pathway that points users to the new Contact Us email when startup errors persist.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages-4"
         ],
         "quotes": [
-          "Change the prices to memberships way lower thanks monthly is fine I think"
+          "make sure everything loads make this launch able this time so it can go live"
         ]
       },
       "acceptanceCriteria": [
-        "When membership catalog fetch fails, the Membership page displays Basic $4.99/month, Pro $14.99/month, Enterprise $39.99/month using fallback pricing."
+        "Startup error screens provide a clear Retry action (existing) and also provide an obvious way to contact support (wholesalensrealestate@gmail.com) when issues persist.",
+        "No infinite loading state occurs during startup; the user either proceeds into the app, sees profile setup, or gets a recoverable error screen with Retry and Contact Us."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Update the Membership page to show monthly pricing for all plans (including Enterprise) so the displayed period is always per month.",
+      "text": "Apply a cohesive, launch-ready visual theme polish across the authenticated shell and startup screens (typography, spacing, and a warm real-estate/ledger feel), keeping the current branding and avoiding introducing new product features.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "monthly is fine I think"
+          "recent-messages-4"
         ]
       },
       "acceptanceCriteria": [
-        "Enterprise plan card shows pricing with period label \"/ month\" (not \"/ year\").",
-        "Basic and Pro plan cards continue to show pricing with period label \"/ month\"."
+        "Visual styling updates are consistent across the sidebar, primary buttons, and startup screens.",
+        "Theme uses a coherent palette and typography treatment (do not introduce blue/purple as primary styling unless already present).",
+        "No functional behavior changes are introduced beyond UI polish."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
-    "Do not edit files under frontend/src/components/ui or other frontend immutablePaths listed in SYSTEM_CONTEXT."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Implementing real payment processing or checkout flows.",
-    "Adding new membership tiers or changing feature gating rules."
+    "Adding third-party customer support tools (chat widgets, ticketing systems).",
+    "Adding email sending from the backend (Contact Us should open the user’s email client via mailto).",
+    "Implementing new payment features or changing membership pricing beyond what is required to fix profile loading."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

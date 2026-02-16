@@ -1,47 +1,47 @@
-export default function StartupLoadingScreen({ message = 'Loading...' }: { message?: string }) {
-  return (
-    <div className="relative flex h-screen items-center justify-center overflow-hidden bg-background">
-      {/* Background illustration */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/assets/generated/wholesale-lens-opening-bg.dim_1920x1080.png"
-          alt=""
-          className="h-full w-full object-cover opacity-20"
-          loading="eager"
-          decoding="async"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
-      </div>
+import { Loader2 } from 'lucide-react';
 
-      {/* Content */}
-      <div className="relative z-10 text-center space-y-8 px-4">
-        {/* Logo */}
-        <div className="flex flex-col items-center space-y-4">
-          <img
-            src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
-            alt="Wholesale Lens"
-            className="h-20 w-20 animate-pulse"
-            loading="eager"
-            decoding="async"
-          />
-          <img
-            src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
-            alt="Wholesale Lens"
-            className="h-8 w-auto"
-            loading="eager"
-            decoding="async"
-          />
+interface StartupLoadingScreenProps {
+  message?: string;
+}
+
+export default function StartupLoadingScreen({ message = 'Loading...' }: StartupLoadingScreenProps) {
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-8 text-center">
+        <div className="space-y-6">
+          <div className="flex justify-center">
+            <img
+              src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
+              alt="Wholesale Lens"
+              className="h-24 w-24 object-contain"
+              width={96}
+              height={96}
+            />
+          </div>
+          
+          <div className="space-y-3">
+            <img
+              src="/assets/generated/wholesale-lens-wordmark.dim_1200x300.png"
+              alt="Wholesale Lens"
+              className="h-10 w-auto mx-auto object-contain"
+              width={200}
+              height={50}
+            />
+            
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <p className="text-base text-muted-foreground font-medium">
+                {message}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Loading indicator */}
-        <div className="space-y-4">
-          <div className="relative mx-auto">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary mx-auto" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-lg font-semibold text-foreground">{message}</p>
-            <p className="text-sm text-muted-foreground">Setting up your workspace</p>
-          </div>
+        <div className="pt-8">
+          <div 
+            className="h-32 w-full bg-contain bg-center bg-no-repeat opacity-20"
+            style={{ backgroundImage: 'url(/assets/generated/wholesale-lens-opening-bg.dim_1920x1080.png)' }}
+          />
         </div>
       </div>
     </div>

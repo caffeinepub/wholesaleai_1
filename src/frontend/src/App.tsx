@@ -1,76 +1,148 @@
-import { lazy, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useQueries';
 import { useBackendActor } from './hooks/useBackendActor';
 import SignInScreen from './components/SignInScreen';
 import ProfileSetupDialog from './components/ProfileSetupDialog';
+import AppShell from './components/AppShell';
 import StartupLoadingScreen from './components/StartupLoadingScreen';
 import StartupErrorScreen from './components/StartupErrorScreen';
-import { ThemeProvider } from 'next-themes';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentFailurePage from './pages/PaymentFailurePage';
 
-// Lazy load AppShell to reduce initial bundle size
-const AppShell = lazy(() => import('./components/AppShell'));
+const STARTUP_TIMEOUT_MS = 30000; // 30 seconds
 
 export default function App() {
-  const { identity, isInitializing } = useInternetIdentity();
-  const isAuthenticated = !!identity;
-
-  // Single ThemeProvider wrapper to avoid remounts
-  return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {isInitializing ? (
-        <StartupLoadingScreen message="Initializing..." />
-      ) : !isAuthenticated ? (
-        <SignInScreen />
-      ) : (
-        <AuthenticatedApp />
-      )}
-    </ThemeProvider>
-  );
-}
-
-function AuthenticatedApp() {
-  const { actor, isFetching: actorFetching, isError: actorError, refetch: refetchActor } = useBackendActor();
-  const { 
-    data: userProfile, 
-    isLoading: profileLoading, 
+  const { identity, isInitializing: identityInitializing } = useInternetIdentity();
+  const { actorReady, isLoading: actorLoading, isError: actorError, refetch: retryActor } = useBackendActor();
+  const {
+    data: userProfile,
+    isLoading: profileLoading,
     isFetched: profileFetched,
     isError: profileError,
-    refetch: refetchProfile 
+    error: profileErrorObj,
+    refetch: retryProfile,
   } = useGetCallerUserProfile();
 
-  // Show error screen if actor initialization fails
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [startupTimeout, setStartupTimeout] = useState(false);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Startup watchdog to prevent infinite loading
+  useEffect(() => {
+    if (!identity) {
+      setStartupTimeout(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (actorLoading || profileLoading) {
+        setStartupTimeout(true);
+      }
+    }, STARTUP_TIMEOUT_MS);
+
+    return () => clearTimeout(timer);
+  }, [identity, actorLoading, profileLoading]);
+
+  const isAuthenticated = !!identity;
+
+  // Check if we're on a payment result page
+  const isPaymentSuccessPage = currentPath === '/payment-success';
+  const isPaymentCancelPage = currentPath === '/payment-cancel';
+
+  // Show loading screen during identity initialization
+  if (identityInitializing) {
+    return <StartupLoadingScreen message="Initializing..." />;
+  }
+
+  // Show sign-in screen if not authenticated
+  if (!isAuthenticated) {
+    return <SignInScreen />;
+  }
+
+  // Handle startup timeout
+  if (startupTimeout) {
+    return (
+      <StartupErrorScreen
+        message="The application is taking longer than expected to load. Please check your connection and try again."
+        onRetry={() => {
+          setStartupTimeout(false);
+          if (actorError) {
+            retryActor();
+          } else if (profileError) {
+            retryProfile();
+          }
+        }}
+      />
+    );
+  }
+
+  // Show loading while actor initializes
+  if (actorLoading) {
+    return <StartupLoadingScreen message="Connecting..." />;
+  }
+
+  // Show error screen if actor initialization failed
   if (actorError) {
     return (
-      <StartupErrorScreen 
+      <StartupErrorScreen
         message="Failed to connect to the backend. Please check your connection and try again."
-        onRetry={() => refetchActor()}
+        onRetry={retryActor}
       />
     );
   }
 
-  // Show error screen if profile fetch fails (but actor is ready)
-  if (profileError && !actorFetching && actor) {
-    return (
-      <StartupErrorScreen 
-        message="Failed to load your profile. Please try again."
-        onRetry={() => refetchProfile()}
-      />
-    );
+  // Handle payment result pages (must be authenticated and actor ready)
+  if (isPaymentSuccessPage || isPaymentCancelPage) {
+    // Wait for actor to be ready before showing payment pages
+    if (!actorReady) {
+      return <StartupLoadingScreen message="Loading payment status..." />;
+    }
+    
+    if (isPaymentSuccessPage) {
+      return <PaymentSuccessPage />;
+    }
+    
+    if (isPaymentCancelPage) {
+      return <PaymentFailurePage />;
+    }
   }
 
-  // Show loading while actor or profile are loading
-  if (actorFetching || profileLoading || !profileFetched) {
+  // Wait for actor to be ready before fetching profile
+  if (!actorReady) {
+    return <StartupLoadingScreen message="Connecting..." />;
+  }
+
+  // Show loading while fetching profile
+  if (profileLoading) {
     return <StartupLoadingScreen message="Loading your profile..." />;
   }
 
-  // Show profile setup dialog if profile is null (first-time user)
-  const showProfileSetup = profileFetched && userProfile === null;
+  // Show error if profile fetch failed (genuine error, not missing profile)
+  if (profileError) {
+    const errorMessage = profileErrorObj?.message || 'Failed to load your profile. This may be a temporary issue.';
+    return (
+      <StartupErrorScreen
+        message={errorMessage}
+        onRetry={retryProfile}
+      />
+    );
+  }
+
+  // Show profile setup dialog if user doesn't have a profile yet (name is empty)
+  const showProfileSetup = isAuthenticated && actorReady && profileFetched && userProfile === null;
 
   return (
-    <Suspense fallback={<StartupLoadingScreen message="Loading application..." />}>
+    <>
       <AppShell userProfile={userProfile ?? null} />
       {showProfileSetup && <ProfileSetupDialog />}
-    </Suspense>
+    </>
   );
 }

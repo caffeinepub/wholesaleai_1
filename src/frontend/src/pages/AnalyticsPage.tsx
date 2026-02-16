@@ -2,21 +2,22 @@ import { useGetAnalytics, useGetCallerUserProfile } from '../hooks/useQueries';
 import { MembershipTier } from '../backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, DollarSign, Target, Percent } from 'lucide-react';
-import FeatureLock from '../components/FeatureLock';
 import ProfitByZipTable from '../components/ProfitByZipTable';
+import FeatureLock from '../components/FeatureLock';
+import PageQueryErrorState from '../components/PageQueryErrorState';
 
 export default function AnalyticsPage() {
   const { data: userProfile } = useGetCallerUserProfile();
-  const { data: analytics, isLoading } = useGetAnalytics();
+  const { data: analytics, isLoading, isError, error, refetch } = useGetAnalytics();
 
   const hasAccess = userProfile?.membershipTier === MembershipTier.Enterprise;
 
   if (!hasAccess) {
     return (
       <FeatureLock
-        feature="Advanced Analytics"
+        feature="Analytics"
         requiredTier="Enterprise"
-        description="Access detailed insights including average assignment fees, close rates, conversion metrics, and profit analysis by location."
+        description="Access advanced performance insights and profit analysis by zip code"
       />
     );
   }
@@ -32,19 +33,33 @@ export default function AnalyticsPage() {
     );
   }
 
+  if (isError) {
+    const isMembershipError = error?.message?.includes('permission') || error?.message?.includes('membership');
+    
+    return (
+      <PageQueryErrorState
+        message={error?.message || 'Failed to load analytics data. Please try again.'}
+        onRetry={refetch}
+        secondaryAction={isMembershipError ? {
+          label: 'View Membership Plans',
+          onClick: () => window.dispatchEvent(new CustomEvent('navigate-to-membership'))
+        } : undefined}
+      />
+    );
+  }
+
   if (!analytics) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground">No analytics data available</p>
-        </CardContent>
-      </Card>
+      <PageQueryErrorState
+        message="No analytics data available yet. Complete some deals to see your performance metrics."
+        onRetry={refetch}
+      />
     );
   }
 
   const metrics = [
     {
-      title: 'Average Assignment Fee',
+      title: 'Avg Assignment Fee',
       value: `$${Math.round(analytics.averageAssignmentFee).toLocaleString()}`,
       icon: DollarSign,
       color: 'text-chart-1',
@@ -67,22 +82,16 @@ export default function AnalyticsPage() {
       icon: Percent,
       color: 'text-chart-4',
     },
-    {
-      title: 'Lead to Contract',
-      value: `${analytics.leadToContractPercent.toFixed(1)}%`,
-      icon: Percent,
-      color: 'text-primary',
-    },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Advanced Analytics</h1>
-        <p className="text-muted-foreground">Deep insights into your wholesaling performance</p>
+        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+        <p className="text-muted-foreground">Advanced performance insights</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric) => {
           const Icon = metric.icon;
           return (
@@ -110,4 +119,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-

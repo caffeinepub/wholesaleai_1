@@ -106,6 +106,40 @@ export interface MembershipPricing {
 export type MembershipTier = { 'Pro' : null } |
   { 'Enterprise' : null } |
   { 'Basic' : null };
+export interface PaymentSession {
+  'status' : { 'pending' : null } |
+    { 'completed' : null } |
+    { 'failed' : { 'error' : string } },
+  'userId' : Principal,
+  'createdAt' : bigint,
+  'sessionId' : string,
+  'isAnnual' : boolean,
+  'membershipTier' : MembershipTier,
+}
+export interface ShoppingItem {
+  'productName' : string,
+  'currency' : string,
+  'quantity' : bigint,
+  'priceInCents' : bigint,
+  'productDescription' : string,
+}
+export interface StripeConfiguration {
+  'allowedCountries' : Array<string>,
+  'secretKey' : string,
+}
+export type StripeSessionStatus = {
+    'completed' : { 'userPrincipal' : [] | [string], 'response' : string }
+  } |
+  { 'failed' : { 'error' : string } };
+export interface TransformationInput {
+  'context' : Uint8Array,
+  'response' : http_request_result,
+}
+export interface TransformationOutput {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
+}
 export interface UserProfile {
   'name' : string,
   'email' : string,
@@ -125,6 +159,12 @@ export interface _CaffeineStorageRefillInformation {
 export interface _CaffeineStorageRefillResult {
   'success' : [] | [boolean],
   'topped_up_amount' : [] | [bigint],
+}
+export interface http_header { 'value' : string, 'name' : string }
+export interface http_request_result {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
 }
 export interface _SERVICE {
   '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
@@ -146,9 +186,14 @@ export interface _SERVICE {
   'analyzeDeal' : ActorMethod<[string], DealAnalysis>,
   'assignBuyerToDeal' : ActorMethod<[bigint, bigint], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'confirmMembershipPurchased' : ActorMethod<[string], undefined>,
   'createBuyer' : ActorMethod<
     [string, string, string, Array<string>, bigint, bigint, string, string],
     bigint
+  >,
+  'createCheckoutSession' : ActorMethod<
+    [Array<ShoppingItem>, string, string],
+    string
   >,
   'createDeal' : ActorMethod<
     [string, string, string, bigint, bigint, bigint, bigint, string, bigint],
@@ -162,18 +207,23 @@ export interface _SERVICE {
   'deleteDeal' : ActorMethod<[bigint], undefined>,
   'getAnalytics' : ActorMethod<[], AnalyticsData>,
   'getBuyer' : ActorMethod<[bigint], [] | [Buyer]>,
-  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserProfile' : ActorMethod<[], UserProfile>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getContract' : ActorMethod<[bigint], [] | [ContractDocument]>,
   'getDeal' : ActorMethod<[bigint], [] | [Deal]>,
-  'getMembershipCatalog' : ActorMethod<[], [] | [MembershipCatalog]>,
+  'getMembershipCatalog' : ActorMethod<[], MembershipCatalog>,
+  'getPaymentSession' : ActorMethod<[string], [] | [PaymentSession]>,
+  'getStripeSessionStatus' : ActorMethod<[string], StripeSessionStatus>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isStripeConfigured' : ActorMethod<[], boolean>,
   'listBuyers' : ActorMethod<[], Array<Buyer>>,
   'listContractsByDeal' : ActorMethod<[bigint], Array<ContractDocument>>,
   'listDeals' : ActorMethod<[], Array<Deal>>,
   'moveDealToStage' : ActorMethod<[bigint, DealStage], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setStripeConfiguration' : ActorMethod<[StripeConfiguration], undefined>,
+  'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
   'updateBuyer' : ActorMethod<
     [
       bigint,
