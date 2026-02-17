@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T23:04:36.951Z",
+  "generatedAt": "2026-02-17T17:12:14.206Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,20 +12,19 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Diagnose and fix the root cause of the startup failure where authenticated users see the startup error screen with message \"Failed to load your profile. Please try again.\" and stage \"Profile loading\", so users can reliably load into the app.",
+        "summary": "Fix the post-login startup flow so an authenticated user never gets stuck on the \"Failed to load your profile\" error screen; instead, the app must deterministically do one of: (a) show ProfileSetupDialog for first-time users (no saved profile yet), or (b) load the existing profile and render AppShell.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/hooks/useQueries.ts",
           "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Update frontend authentication/error classification so that profile-fetch failures caused by authorization (e.g., \"Unauthorized\", \"authentication required\", 401/403-style messages) are consistently detected as authentication errors and trigger the intended recovery flow (sign-out and re-login) instead of leaving the user stuck at profile loading.",
+        "summary": "Improve authentication/session error detection and handling during profile loading so real delegation/identity failures are classified as auth errors and trigger sign-out recovery, while first-time-user cases are not misclassified as auth failures.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/authErrors.ts",
@@ -34,41 +33,43 @@
         ],
         "matchedFiles": [
           "frontend/src/lib/authErrors.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Harden the backend user-profile retrieval path used by the frontend (getCallerUserProfile) so it does not intermittently trap/throw for valid authenticated callers; when a profile does not exist yet, it should return an empty/none result that the frontend can treat as \"needs profile setup\" rather than an error.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Add actionable diagnostics for profile-loading failures: ensure the error displayed in StartupErrorScreen includes a user-friendly message, and the Technical Details section contains the original error message (sanitized) plus a short hint indicating whether the failure was network/timeout/auth/unexpected.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/StartupErrorScreen.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/StartupErrorScreen.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
       },
       {
         "id": "REQ-4",
-        "summary": "Add lightweight diagnostics for profile loading failures to make future occurrences actionable: ensure the frontend captures and displays a useful technicalDetail on the startup error screen (without exposing secrets) and logs the original error to the console, and ensure the retry path clears any stale profile query state before refetching.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/StartupErrorScreen.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/StartupErrorScreen.tsx"
-        ]
+        "summary": "Harden the backend profile APIs used at startup so they do not trap for normal first-time-user scenarios and provide a reliable way to distinguish \"no profile yet\" from true authorization failures.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
     "frontend/src/components/StartupErrorScreen.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/lib/authErrors.ts",
     "frontend/src/utils/urlParams.ts",

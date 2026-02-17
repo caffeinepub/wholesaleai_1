@@ -13,19 +13,20 @@ export function isAuthError(error: any): boolean {
   const message = error?.message || String(error);
   const lowerMessage = message.toLowerCase();
   
+  // Check if error has explicit auth errorType
+  if ((error as any).errorType === 'auth') {
+    return true;
+  }
+  
   // Real authentication failures that require sign-out recovery
-  // Expanded to catch more auth-related errors
   return (
     lowerMessage.includes('authentication error') ||
-    lowerMessage.includes('please sign in') ||
-    lowerMessage.includes('sign out and sign in') ||
+    lowerMessage.includes('please sign out and sign in') ||
     lowerMessage.includes('delegation expired') ||
+    lowerMessage.includes('delegation') && lowerMessage.includes('expired') ||
     lowerMessage.includes('invalid identity') ||
     lowerMessage.includes('anonymous caller') ||
-    lowerMessage.includes('forbidden') ||
-    // Only treat "unauthorized" as auth error if it's NOT from first-time user flow
-    // (first-time users are handled by returning null in the query)
-    (lowerMessage.includes('unauthorized') && !lowerMessage.includes('profile'))
+    lowerMessage.includes('forbidden')
   );
 }
 

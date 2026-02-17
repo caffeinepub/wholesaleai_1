@@ -46,6 +46,17 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const MembershipTier = IDL.Variant({
+  'Pro' : IDL.Null,
+  'Enterprise' : IDL.Null,
+  'Basic' : IDL.Null,
+});
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'email' : IDL.Text,
+  'phone' : IDL.Text,
+  'membershipTier' : MembershipTier,
+});
 export const ShoppingItem = IDL.Record({
   'productName' : IDL.Text,
   'currency' : IDL.Text,
@@ -73,17 +84,6 @@ export const Buyer = IDL.Record({
   'budgetMax' : IDL.Nat,
   'budgetMin' : IDL.Nat,
   'preferredAreas' : IDL.Vec(IDL.Text),
-});
-export const MembershipTier = IDL.Variant({
-  'Pro' : IDL.Null,
-  'Enterprise' : IDL.Null,
-  'Basic' : IDL.Null,
-});
-export const UserProfile = IDL.Record({
-  'name' : IDL.Text,
-  'email' : IDL.Text,
-  'phone' : IDL.Text,
-  'membershipTier' : MembershipTier,
 });
 export const ExternalBlob = IDL.Vec(IDL.Nat8);
 export const ContractDocument = IDL.Record({
@@ -213,6 +213,17 @@ export const idlService = IDL.Service({
   'analyzeDeal' : IDL.Func([IDL.Text], [DealAnalysis], []),
   'assignBuyerToDeal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'checkCallerUserProfileResult' : IDL.Func(
+      [],
+      [
+        IDL.Variant({
+          'Saved' : IDL.Record({ 'profile' : UserProfile }),
+          'Anonymous' : IDL.Null,
+          'FirstTime' : IDL.Null,
+        }),
+      ],
+      ['query'],
+    ),
   'confirmMembershipPurchased' : IDL.Func([IDL.Text], [], []),
   'createBuyer' : IDL.Func(
       [
@@ -402,6 +413,17 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const MembershipTier = IDL.Variant({
+    'Pro' : IDL.Null,
+    'Enterprise' : IDL.Null,
+    'Basic' : IDL.Null,
+  });
+  const UserProfile = IDL.Record({
+    'name' : IDL.Text,
+    'email' : IDL.Text,
+    'phone' : IDL.Text,
+    'membershipTier' : MembershipTier,
+  });
   const ShoppingItem = IDL.Record({
     'productName' : IDL.Text,
     'currency' : IDL.Text,
@@ -429,17 +451,6 @@ export const idlFactory = ({ IDL }) => {
     'budgetMax' : IDL.Nat,
     'budgetMin' : IDL.Nat,
     'preferredAreas' : IDL.Vec(IDL.Text),
-  });
-  const MembershipTier = IDL.Variant({
-    'Pro' : IDL.Null,
-    'Enterprise' : IDL.Null,
-    'Basic' : IDL.Null,
-  });
-  const UserProfile = IDL.Record({
-    'name' : IDL.Text,
-    'email' : IDL.Text,
-    'phone' : IDL.Text,
-    'membershipTier' : MembershipTier,
   });
   const ExternalBlob = IDL.Vec(IDL.Nat8);
   const ContractDocument = IDL.Record({
@@ -569,6 +580,17 @@ export const idlFactory = ({ IDL }) => {
     'analyzeDeal' : IDL.Func([IDL.Text], [DealAnalysis], []),
     'assignBuyerToDeal' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'checkCallerUserProfileResult' : IDL.Func(
+        [],
+        [
+          IDL.Variant({
+            'Saved' : IDL.Record({ 'profile' : UserProfile }),
+            'Anonymous' : IDL.Null,
+            'FirstTime' : IDL.Null,
+          }),
+        ],
+        ['query'],
+      ),
     'confirmMembershipPurchased' : IDL.Func([IDL.Text], [], []),
     'createBuyer' : IDL.Func(
         [

@@ -1,5 +1,5 @@
 import { useGetContractsByDeal } from '../hooks/useQueries';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OpaqueCard, CardContent, CardHeader, CardTitle } from './OpaqueCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -36,13 +36,22 @@ export default function ContractList({ dealId }: ContractListProps) {
   };
 
   const handleDownload = (contract: ContractDocument) => {
-    const url = contract.blob.getDirectURL();
-    window.open(url, '_blank');
+    try {
+      const url = contract.blob.getDirectURL();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = contract.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
   };
 
   if (isLoading) {
     return (
-      <Card>
+      <OpaqueCard>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -54,13 +63,13 @@ export default function ContractList({ dealId }: ContractListProps) {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         </CardContent>
-      </Card>
+      </OpaqueCard>
     );
   }
 
   if (isError) {
     return (
-      <Card>
+      <OpaqueCard>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -72,19 +81,19 @@ export default function ContractList({ dealId }: ContractListProps) {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>{error?.message || 'Failed to load contracts'}</span>
-              <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <Button onClick={() => refetch()} variant="outline" size="sm">
                 Retry
               </Button>
             </AlertDescription>
           </Alert>
         </CardContent>
-      </Card>
+      </OpaqueCard>
     );
   }
 
   if (!contracts || contracts.length === 0) {
     return (
-      <Card>
+      <OpaqueCard>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -93,19 +102,17 @@ export default function ContractList({ dealId }: ContractListProps) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <FileX className="h-12 w-12 text-muted-foreground mb-3" />
+            <FileX className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No contracts uploaded yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Upload your first contract using the form above
-            </p>
+            <p className="text-sm text-muted-foreground">Upload a contract using the form above</p>
           </div>
         </CardContent>
-      </Card>
+      </OpaqueCard>
     );
   }
 
   return (
-    <Card>
+    <OpaqueCard>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
@@ -117,33 +124,33 @@ export default function ContractList({ dealId }: ContractListProps) {
           {contracts.map((contract) => (
             <div
               key={contract.id.toString()}
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+              className="flex items-center justify-between p-4 border rounded-lg opaque-panel"
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <FileText className="h-5 w-5 text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{contract.fileName}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {getDocumentTypeLabel(contract.documentType)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">•</span>
-                    {getStatusBadge(contract.signingStatus)}
-                  </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <p className="font-medium text-sm truncate">{contract.fileName}</p>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>{getDocumentTypeLabel(contract.documentType)}</span>
+                  <span>•</span>
+                  <span>{new Date(Number(contract.uploadedAt) / 1000000).toLocaleDateString()}</span>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDownload(contract)}
-                className="shrink-0"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2 ml-4">
+                {getStatusBadge(contract.signingStatus)}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownload(contract)}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>
       </CardContent>
-    </Card>
+    </OpaqueCard>
   );
 }

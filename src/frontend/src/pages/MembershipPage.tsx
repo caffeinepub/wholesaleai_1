@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Check, Loader2, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Check, Loader2, Zap, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { MembershipTier, type ShoppingItem } from '../backend';
-import { formatCents } from '../lib/money';
+import { formatCents, computeAnnualSavings, formatMonthlyEquivalent } from '../lib/money';
 
 type CheckoutSession = {
   id: string;
@@ -165,9 +166,14 @@ export default function MembershipPage() {
             checked={isAnnual}
             onCheckedChange={setIsAnnual}
           />
-          <Label htmlFor="billing-toggle" className={isAnnual ? 'font-semibold' : ''}>
+          <Label htmlFor="billing-toggle" className={isAnnual ? 'font-semibold flex items-center gap-2' : 'flex items-center gap-2'}>
             Annual
-            <span className="ml-2 text-primary text-sm">(Save up to 30%)</span>
+            {isAnnual && (
+              <Badge variant="default" className="ml-1 bg-primary text-primary-foreground">
+                <TrendingDown className="h-3 w-3 mr-1" />
+                Best Value
+              </Badge>
+            )}
           </Label>
         </div>
       </div>
@@ -184,6 +190,15 @@ export default function MembershipPage() {
             : priceInCents;
 
           const isOnSale = pricing.isOnSale && pricing.salePriceCents;
+
+          // Compute annual savings
+          const annualSavings = isAnnual
+            ? computeAnnualSavings(pricing.monthlyPriceCents, pricing.annualPriceCents)
+            : null;
+
+          const monthlyEquivalent = isAnnual
+            ? formatMonthlyEquivalent(pricing.annualPriceCents)
+            : null;
 
           return (
             <Card
@@ -221,6 +236,21 @@ export default function MembershipPage() {
                   <div className="text-muted-foreground text-sm mt-1">
                     per {isAnnual ? 'year' : 'month'}
                   </div>
+                  
+                  {/* Annual value messaging */}
+                  {isAnnual && annualSavings && (
+                    <div className="mt-3 space-y-1">
+                      <Badge variant="secondary" className="text-xs font-medium">
+                        Save {formatCents(annualSavings)} vs monthly
+                      </Badge>
+                      {monthlyEquivalent && (
+                        <div className="text-xs text-muted-foreground">
+                          Just {monthlyEquivalent}/month
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {isOnSale && (
                     <div className="text-primary text-sm font-semibold mt-2">
                       Limited Time Sale!

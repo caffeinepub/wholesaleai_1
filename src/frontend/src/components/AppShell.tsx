@@ -162,8 +162,8 @@ export default function AppShell({ userProfile }: AppShellProps) {
                 border
                 ${
                   isActive
-                    ? 'bg-[oklch(var(--sidebar-accent))] text-[oklch(var(--sidebar-accent-foreground))] border-[oklch(var(--sidebar-accent-foreground)/0.25)] shadow-md'
-                    : 'bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:border-[oklch(var(--sidebar-accent-foreground)/0.2)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
+                    ? 'bg-[oklch(var(--sidebar-accent))] text-[oklch(var(--sidebar-accent-foreground))] border-[oklch(var(--sidebar-accent))] shadow-lg'
+                    : 'bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:text-[oklch(var(--sidebar-foreground))] hover:border-[oklch(var(--sidebar-nav-hover))] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
                 }
               `}
             >
@@ -198,8 +198,8 @@ export default function AppShell({ userProfile }: AppShellProps) {
             border
             ${
               currentPage === 'admin'
-                ? 'bg-[oklch(var(--sidebar-accent))] text-[oklch(var(--sidebar-accent-foreground))] border-[oklch(var(--sidebar-accent-foreground)/0.25)] shadow-md'
-                : 'bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:border-[oklch(var(--sidebar-accent-foreground)/0.2)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
+                ? 'bg-[oklch(var(--sidebar-accent))] text-[oklch(var(--sidebar-accent-foreground))] border-[oklch(var(--sidebar-accent))] shadow-lg'
+                : 'bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:text-[oklch(var(--sidebar-foreground))] hover:border-[oklch(var(--sidebar-nav-hover))] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
             }
           `}
         >
@@ -209,7 +209,7 @@ export default function AppShell({ userProfile }: AppShellProps) {
 
         <button
           onClick={handleContactSupport}
-          className="sidebar-nav-button w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:border-[oklch(var(--sidebar-accent-foreground)/0.2)] hover:shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+          className="sidebar-nav-button w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-[oklch(var(--sidebar-nav))] text-[oklch(var(--sidebar-foreground))] border border-[oklch(var(--sidebar-border))] hover:bg-[oklch(var(--sidebar-nav-hover))] hover:text-[oklch(var(--sidebar-foreground))] hover:border-[oklch(var(--sidebar-nav-hover))] hover:shadow-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
         >
           <Mail className="h-5 w-5 flex-shrink-0" />
           <span className="flex-1 text-left">Contact Support</span>

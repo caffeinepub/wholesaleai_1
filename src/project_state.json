@@ -4,41 +4,41 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Users intermittently see error: \"Failed to load your profile. Please try again.\" (fails at: Profile loading), preventing login/access."
+    "Profile loading fails after login with error: 'Failed to load your profile. Please try again.'"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-diagnose-and-fix-the-root-cause-of-the-startup-failure-where-authenticated-users-see-the-startup-error-screen-with-message-failed-to-load-your-profile-please-try-again-and-stage-profile-loading-so-users-can-reliably-load-into-the-app",
-      "title": "Diagnose and fix the root cause of the startup failure where authenticated users see the startup error screen with message \"Failed to load your profile. Please try again.\" and stage \"Profile loading\", so users can reliably load into the app.",
+      "id": "feature-fix-the-post-login-startup-flow-so-an-authenticated-user-never-gets-stuck-on-the-failed-to-load-your-profile-error-screen-instead-the-app-must-deterministically-do-one-of-a-show-profilesetupdialog-for-first-time-users-no-saved-profile-yet-or-b-load-the-existing-profile-and-render-appshell",
+      "title": "Fix the post-login startup flow so an authenticated user never gets stuck on the \"Failed to load your profile\" error screen; instead, the app must deterministically do one of: (a) show ProfileSetupDialog for first-time users (no saved profile yet), or (b) load the existing profile and render AppShell.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-frontend-authentication-error-classification-so-that-profile-fetch-failures-caused-by-authorization-e-g-unauthorized-authentication-required-401-403-style-messages-are-consistently-detected-as-authentication-errors-and-trigger-the-intended-recovery-flow-sign-out-and-re-login-instead-of-leaving-the-user-stuck-at-profile-loading",
-      "title": "Update frontend authentication/error classification so that profile-fetch failures caused by authorization (e.g., \"Unauthorized\", \"authentication required\", 401/403-style messages) are consistently detected as authentication errors and trigger the intended recovery flow (sign-out and re-login) instead of leaving the user stuck at profile loading.",
+      "id": "feature-improve-authentication-session-error-detection-and-handling-during-profile-loading-so-real-delegation-identity-failures-are-classified-as-auth-errors-and-trigger-sign-out-recovery-while-first-time-user-cases-are-not-misclassified-as-auth-failures",
+      "title": "Improve authentication/session error detection and handling during profile loading so real delegation/identity failures are classified as auth errors and trigger sign-out recovery, while first-time-user cases are not misclassified as auth failures.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-lightweight-diagnostics-for-profile-loading-failures-to-make-future-occurrences-actionable-ensure-the-frontend-captures-and-displays-a-useful-technicaldetail-on-the-startup-error-screen-without-exposing-secrets-and-logs-the-original-error-to-the-console-and-ensure-the-retry-path-clears-any-stale-profile-query-state-before-refetching",
-      "title": "Add lightweight diagnostics for profile loading failures to make future occurrences actionable: ensure the frontend captures and displays a useful technicalDetail on the startup error screen (without exposing secrets) and logs the original error to the console, and ensure the retry path clears any stale profile query state before refetching.",
+      "id": "feature-add-actionable-diagnostics-for-profile-loading-failures-ensure-the-error-displayed-in-startuperrorscreen-includes-a-user-friendly-message-and-the-technical-details-section-contains-the-original-error-message-sanitized-plus-a-short-hint-indicating-whether-the-failure-was-network-timeout-auth-unexpected",
+      "title": "Add actionable diagnostics for profile-loading failures: ensure the error displayed in StartupErrorScreen includes a user-friendly message, and the Technical Details section contains the original error message (sanitized) plus a short hint indicating whether the failure was network/timeout/auth/unexpected.",
       "reqIds": [
-        "REQ-4"
+        "REQ-3"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-3",
-      "summary": "Harden the backend user-profile retrieval path used by the frontend (getCallerUserProfile) so it does not intermittently trap/throw for valid authenticated callers; when a profile does not exist yet, it should return an empty/none result that the frontend can treat as \"needs profile setup\" rather than an error.",
+      "id": "AR-4",
+      "summary": "Harden the backend profile APIs used at startup so they do not trap for normal first-time-user scenarios and provide a reliable way to distinguish \"no profile yet\" from true authorization failures.",
       "reqIds": [
-        "REQ-3"
+        "REQ-4"
       ],
       "status": "pending"
     }

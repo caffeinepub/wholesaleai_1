@@ -2,10 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-diagnose-and-fix-the-root-cause-of-the-startup-failure-where-authenticated-users-see-the-startup-error-screen-with-message-failed-to-load-your-profile-please-try-again-and-stage-profile-loading-so-users-can-reliably-load-into-the-app",
-      "featureTitle": "Diagnose and fix the root cause of the startup failure where authenticated users see the startup error screen with message \"Failed to load your profile. Please try again.\" and stage \"Profile loading\", so users can reliably load into the app.",
+      "featureId": "feature-fix-the-post-login-startup-flow-so-an-authenticated-user-never-gets-stuck-on-the-failed-to-load-your-profile-error-screen-instead-the-app-must-deterministically-do-one-of-a-show-profilesetupdialog-for-first-time-users-no-saved-profile-yet-or-b-load-the-existing-profile-and-render-appshell",
+      "featureTitle": "Fix the post-login startup flow so an authenticated user never gets stuck on the \"Failed to load your profile\" error screen; instead, the app must deterministically do one of: (a) show ProfileSetupDialog for first-time users (no saved profile yet), or (b) load the existing profile and render AppShell.",
       "files": [
-        "frontend/src/App.tsx",
         "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
@@ -25,10 +24,9 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-frontend-authentication-error-classification-so-that-profile-fetch-failures-caused-by-authorization-e-g-unauthorized-authentication-required-401-403-style-messages-are-consistently-detected-as-authentication-errors-and-trigger-the-intended-recovery-flow-sign-out-and-re-login-instead-of-leaving-the-user-stuck-at-profile-loading",
-      "featureTitle": "Update frontend authentication/error classification so that profile-fetch failures caused by authorization (e.g., \"Unauthorized\", \"authentication required\", 401/403-style messages) are consistently detected as authentication errors and trigger the intended recovery flow (sign-out and re-login) instead of leaving the user stuck at profile loading.",
+      "featureId": "feature-improve-authentication-session-error-detection-and-handling-during-profile-loading-so-real-delegation-identity-failures-are-classified-as-auth-errors-and-trigger-sign-out-recovery-while-first-time-user-cases-are-not-misclassified-as-auth-failures",
+      "featureTitle": "Improve authentication/session error detection and handling during profile loading so real delegation/identity failures are classified as auth errors and trigger sign-out recovery, while first-time-user cases are not misclassified as auth failures.",
       "files": [
-        "frontend/src/App.tsx",
         "frontend/src/hooks/useQueries.ts",
         "frontend/src/lib/authErrors.ts"
       ],
@@ -49,11 +47,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-lightweight-diagnostics-for-profile-loading-failures-to-make-future-occurrences-actionable-ensure-the-frontend-captures-and-displays-a-useful-technicaldetail-on-the-startup-error-screen-without-exposing-secrets-and-logs-the-original-error-to-the-console-and-ensure-the-retry-path-clears-any-stale-profile-query-state-before-refetching",
-      "featureTitle": "Add lightweight diagnostics for profile loading failures to make future occurrences actionable: ensure the frontend captures and displays a useful technicalDetail on the startup error screen (without exposing secrets) and logs the original error to the console, and ensure the retry path clears any stale profile query state before refetching.",
+      "featureId": "feature-add-actionable-diagnostics-for-profile-loading-failures-ensure-the-error-displayed-in-startuperrorscreen-includes-a-user-friendly-message-and-the-technical-details-section-contains-the-original-error-message-sanitized-plus-a-short-hint-indicating-whether-the-failure-was-network-timeout-auth-unexpected",
+      "featureTitle": "Add actionable diagnostics for profile-loading failures: ensure the error displayed in StartupErrorScreen includes a user-friendly message, and the Technical Details section contains the original error message (sanitized) plus a short hint indicating whether the failure was network/timeout/auth/unexpected.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/StartupErrorScreen.tsx"
+        "frontend/src/components/StartupErrorScreen.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -67,7 +65,7 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-4"
+        "REQ-3"
       ],
       "confidence": "high"
     }

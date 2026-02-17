@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useGetDeals, useGetCallerUserProfile } from '../hooks/useQueries';
 import { MembershipTier } from '../backend';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OpaqueCard, CardContent, CardHeader, CardTitle } from '../components/OpaqueCard';
 import {
   Select,
-  SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { OpaqueSelectContent } from '../components/OpaqueOverlays';
 import ContractUploader from '../components/ContractUploader';
 import ContractList from '../components/ContractList';
 import FeatureLock from '../components/FeatureLock';
@@ -91,7 +91,7 @@ export default function ContractsPage() {
         <p className="text-muted-foreground">Manage purchase and assignment contracts</p>
       </div>
 
-      <Card>
+      <OpaqueCard>
         <CardHeader>
           <CardTitle>Select Deal</CardTitle>
         </CardHeader>
@@ -103,16 +103,16 @@ export default function ContractsPage() {
             <SelectTrigger>
               <SelectValue placeholder="Choose a deal..." />
             </SelectTrigger>
-            <SelectContent>
+            <OpaqueSelectContent>
               {deals.map((deal) => (
                 <SelectItem key={deal.id.toString()} value={deal.id.toString()}>
                   {deal.address} - {deal.sellerName}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </OpaqueSelectContent>
           </Select>
         </CardContent>
-      </Card>
+      </OpaqueCard>
 
       {selectedDealId && (
         <>

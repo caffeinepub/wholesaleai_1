@@ -35,14 +35,14 @@
 
     --radius: 0.5rem;
 
-    /* Sidebar - fine-tuned fills for balanced visual hierarchy in light theme */
+    /* Sidebar - vibrant warm orange/amber fills aligned with brand palette */
     --sidebar: 20 14% 98%;
     --sidebar-foreground: 20 14% 15%;
-    --sidebar-border: 20 14% 85%;
-    --sidebar-accent: 25 85% 88%;
-    --sidebar-accent-foreground: 25 95% 25%;
-    --sidebar-nav: 20 14% 90%;
-    --sidebar-nav-hover: 25 70% 85%;
+    --sidebar-border: 25 60% 80%;
+    --sidebar-accent: 25 95% 53%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-nav: 25 85% 92%;
+    --sidebar-nav-hover: 25 90% 65%;
 
     /* Chart colors */
     --chart-1: 25 95% 53%;
@@ -88,14 +88,14 @@
     --input: 0 0% 18%;
     --ring: 25 95% 53%;
 
-    /* Sidebar - fine-tuned fills for balanced visual hierarchy in dark theme */
+    /* Sidebar - vibrant warm orange fills for dark theme */
     --sidebar: 0 0% 6%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-border: 0 0% 22%;
-    --sidebar-accent: 25 55% 24%;
-    --sidebar-accent-foreground: 25 100% 92%;
-    --sidebar-nav: 0 0% 14%;
-    --sidebar-nav-hover: 25 35% 20%;
+    --sidebar-border: 25 40% 25%;
+    --sidebar-accent: 25 95% 53%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-nav: 25 50% 18%;
+    --sidebar-nav-hover: 25 70% 35%;
 
     /* Chart colors */
     --chart-1: 25 95% 53%;
@@ -128,5 +128,21 @@
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-clip: padding-box;
+  }
+
+  /* Opaque card utility - forces fully solid backgrounds without transparency */
+  .opaque-card {
+    background-color: hsl(var(--card)) !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Opaque panel utility - for nested boxes inside cards */
+  .opaque-panel {
+    background-color: hsl(var(--card)) !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }

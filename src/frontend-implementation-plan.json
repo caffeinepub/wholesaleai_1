@@ -1,73 +1,78 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix intermittent profile loading failure blocking login (frontend hardening)",
+  "title": "Fix deterministic post-login profile startup flow (Wholesale Lens)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Make startup profile loading reliable and ensure existing users reach the app shell while first-time users are routed to profile setup, with a functional Retry that does not require refresh.",
+      "summary": "Make post-Internet Identity login startup deterministically route authenticated users to ProfileSetupDialog (no profile) or AppShell (profile), and recover cleanly on auth/session failures without getting stuck on the startup error screen.",
       "acceptanceCriteria": [
-        "After signing in with Internet Identity, the app reaches the main application shell without showing the \"Failed to load your profile\" startup error for existing users with profiles.",
-        "If the user has no profile yet, the app shows the profile setup dialog instead of the startup error screen.",
-        "If the backend is unreachable or the call genuinely fails, the error screen shows the correct stage (\"Profile loading\") and the Retry button successfully retries the profile fetch without requiring a full page refresh."
+        "After signing in with Internet Identity, the app reaches either ProfileSetupDialog (if no profile exists) or AppShell (if a profile exists) without showing the startup error screen.",
+        "If the backend returns null for getCallerUserProfile(), the UI shows ProfileSetupDialog rather than a generic startup error.",
+        "If the backend call fails due to auth/session issues, the app performs sign-out recovery (clear identity + React Query cache) and returns the user to the sign-in screen without an infinite loop."
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Harden the profile query used at startup: (1) include the authenticated principal in the React Query key to prevent cross-identity cache bleed; (2) refine \"no profile\" detection without converting genuine failures into null; (3) add a lightweight, deterministic fallback check using existing backend capabilities (e.g., isFirstTimeUser()/hasUserProfile()) to decide whether an auth-like failure should route to profile setup vs be treated as a true authentication failure; (4) ensure the query never hangs by keeping the existing timeout and avoiding indefinite retries. Use the selected \"authorization\" component guidance for profile setup gating/caching semantics; verify the component's usage instructions before implementing."
+          "description": "Refactor the startup profile query to use the backend startup-safe capability (e.g., checkCallerUserProfileResult()) to reliably distinguish Saved vs FirstTime vs Anonymous, returning null only for true first-time users and throwing an auth-classified error for session/delegation/anonymous failures. Maintain principal-scoped React Query keying and dependency-aware isLoading/isFetched semantics as per the authorization component guidance. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Adjust startup orchestration to eliminate intermittent profile-loading dead-ends: ensure the app transitions to the main AppShell only when a non-null profile is present; ensure first-time users (null profile) always render ProfileSetupDialog; make Retry for the \"profile-fetch\" stage clear any stale/cached profile query state and then refetch without a full reload; preserve the stage value as 'profile-fetch' so StartupErrorScreen renders 'Profile loading'. Use the selected \"authorization\" component recovery guidance (clear cached application data on logout); verify the component's usage instructions before implementing."
+          "description": "Adjust the post-login startup orchestration to consume the revised profile query states deterministically: show ProfileSetupDialog when the query is fetched and profile is null; render AppShell when profile exists; and on auth-classified failures execute sign-out recovery (clear identity + React Query cache) and return to SignInScreen without retry loops. Ensure retry clears the principal-scoped cached profile query before refetching. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Improve auth/permission error detection during profile fetch so auth-related failures trigger sign-out and return users to sign-in instead of leaving them stuck at profile loading.",
+      "summary": "Improve auth/session error classification during profile loading to trigger automatic sign-out recovery only for real identity/delegation failures while avoiding misclassification of first-time-user states.",
       "acceptanceCriteria": [
-        "When the profile fetch fails due to an auth/permission error, the app automatically runs the sign-out recovery flow and returns the user to the sign-in screen.",
-        "The startup error screen does not repeatedly appear for auth-related profile fetch errors; the user is instead guided back to sign-in.",
-        "All user-facing messages remain in English (including any newly added error messages)."
+        "Profile-loading failures caused by expired/invalid delegations, anonymous caller, 401/403-style failures, or equivalent agent errors are recognized as auth errors and trigger automatic sign-out recovery.",
+        "First-time users (no profile yet) do not trigger sign-out recovery; they are routed into ProfileSetupDialog.",
+        "The startup error UI is only shown for non-auth failures (network/timeout/unexpected) after classification."
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/authErrors.ts",
           "operation": "modify",
-          "description": "Broaden and standardize auth/permission error classification for frontend recovery: detect common authorization/authentication failure strings (e.g., unauthorized/authentication required/permission denied/forbidden/401/403-like text, delegation expired/invalid identity/anonymous caller) while avoiding misclassifying first-time onboarding states. Keep all user-facing messages in English. Use the selected \"authorization\" component guidance for handling backend trap messages gracefully; verify the component's usage instructions before implementing."
+          "description": "Harden auth/session error detection to recognize common Internet Identity / agent delegation failure patterns (expired/invalid delegation, anonymous principal, forbidden/unauthorized equivalents) while avoiding false positives for first-time-user profile absence. Ensure this logic is used consistently by the startup flow. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update profile-fetch error handling to propagate auth failures in a way App.tsx can consistently recognize (e.g., preserve original error message and/or wrap in a dedicated error type), while still allowing true first-time users to reach profile setup (null profile) when appropriate. Use the selected \"authorization\" component guidance for login gating and cache clearing; verify the component's usage instructions before implementing."
+          "description": "Ensure profile-loading logic emits correctly classified errors for auth vs network vs timeout vs unexpected (e.g., attach a stable errorType and preserve the original underlying error message for diagnostics), and that first-time-user states resolve to a successful null result rather than an auth error. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Ensure startup profile error handling uses the updated auth error classifier and reliably triggers the sign-out recovery flow for auth-related profile fetch failures (clear Internet Identity session + clear React Query cache + return to sign-in) rather than showing the startup error screen repeatedly. Use the selected \"authorization\" component logout/cached-data clearing guidance; verify the component's usage instructions before implementing."
+          "description": "Update startup error handling so auth-classified profile-loading failures trigger sign-out recovery (identity clear + React Query cache clear) and route to SignInScreen, while non-auth failures show StartupErrorScreen. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-4",
-      "summary": "Add lightweight, safe diagnostics for profile loading failures and make Retry clear stale query state before refetching.",
+      "id": "REQ-3",
+      "summary": "Add actionable diagnostics to the startup error experience for profile-loading failures, including clear user messaging, sanitized technical details, and a retry that performs a true refetch.",
       "acceptanceCriteria": [
-        "When profile loading fails, the startup error screen includes a technical detail string that helps distinguish timeout vs network vs auth vs unexpected errors.",
-        "Clicking Retry from a profile-loading failure clears the cached profile query and successfully re-attempts the request.",
-        "No sensitive values (tokens, secrets, raw credentials) are displayed in the technical detail."
+        "When profile loading fails, the error screen shows a clear English message appropriate to the classified error type (network/timeout/unexpected).",
+        "The Technical Details accordion shows sanitized underlying error information sufficient to debug (e.g., the raw agent/canister error message) without exposing long secrets/tokens.",
+        "The Retry button results in a real re-attempt to fetch the profile (clearing any stale cached profile result for the current principal first)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Capture actionable diagnostics for profile-loading failures: log the original error object to the console (for developer debugging), and compute a sanitized technicalDetail string (no secrets) that includes a clear classification (timeout vs network vs auth vs unexpected) plus a minimal error summary. Ensure Retry cancels and removes the cached 'currentUserProfile' query state before refetching. Use the selected \"authorization\" component guidance to clear cached profile data on logout/recovery; verify the component's usage instructions before implementing."
-        },
-        {
           "path": "frontend/src/components/StartupErrorScreen.tsx",
           "operation": "modify",
-          "description": "Display the provided technicalDetail on the startup error screen in a safe, readable way (e.g., a details/expandable section or secondary text block), and keep existing stage mapping so 'profile-fetch' displays as 'Profile loading'. Ensure the UI does not reveal sensitive values and remains English-only. Verify shadcn/ui components are not modified (compose only) and verify any relevant selected component usage instructions before implementing."
+          "description": "Enhance StartupErrorScreen technical details to always include (a) the sanitized original underlying error message and (b) a short, explicit classification hint (network/timeout/auth/unexpected) derived from errorType, while keeping the primary message user-friendly. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Pass improved diagnostic payloads to StartupErrorScreen for profile-loading failures (user-friendly message + sanitized original error detail + classification hint). Ensure Retry clears the principal-scoped cached profile query result before re-attempting the profile fetch. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Preserve and surface the original backend/agent error message (separately from the user-friendly message) so StartupErrorScreen can display sanitized technical details and a classification hint without leaking secrets/tokens. Verify the component's usage instructions before implementing."
         }
       ]
     }

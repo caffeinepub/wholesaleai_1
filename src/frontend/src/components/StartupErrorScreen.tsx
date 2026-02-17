@@ -1,166 +1,139 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
-import { openSupportEmail } from '../lib/support';
+import { Button } from './ui/button';
 import { useState } from 'react';
+import { Separator } from './ui/separator';
 
-interface StartupErrorScreenProps {
+type StartupErrorScreenProps = {
   message: string;
   stage?: string;
   technicalDetail?: string;
   errorType?: 'timeout' | 'network' | 'auth' | 'unexpected';
   isAuthError?: boolean;
   onRetry: () => void;
-  onSignOut: () => void;
-}
+  onSignOut?: () => void;
+};
 
-export default function StartupErrorScreen({ 
-  message, 
-  stage, 
+export default function StartupErrorScreen({
+  message,
+  stage,
   technicalDetail,
   errorType,
-  isAuthError = false,
+  isAuthError,
   onRetry,
   onSignOut,
 }: StartupErrorScreenProps) {
-  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+  const [showTechnical, setShowTechnical] = useState(false);
 
-  const handleContactSupport = () => {
-    const body = [
-      `Error message: ${message}`,
-      stage ? `Stage: ${stage}` : '',
-      errorType ? `Error type: ${errorType}` : '',
-      technicalDetail ? `Technical detail: ${technicalDetail}` : '',
-    ].filter(Boolean).join('\n');
-    
-    openSupportEmail('Wholesale Lens - Startup Error', body);
-  };
+  // Sanitize technical details to avoid exposing long tokens/secrets
+  const sanitizedDetail = technicalDetail
+    ? technicalDetail.length > 200
+      ? technicalDetail.substring(0, 200) + '... (truncated)'
+      : technicalDetail
+    : 'No additional details available';
 
-  // Create user-friendly stage label
-  const getStageLabel = (stageValue?: string): string => {
-    if (!stageValue) return '';
-    
-    switch (stageValue) {
-      case 'identity-init':
-        return 'Identity initialization';
-      case 'actor-init':
-        return 'Backend connection';
-      case 'profile-fetch':
-        return 'Profile loading';
-      case 'route-check':
-        return 'Route verification';
-      default:
-        return stageValue;
-    }
-  };
-
-  // Create diagnostic hint based on error type
-  const getDiagnosticHint = (): string | null => {
-    if (errorType === 'timeout') {
-      return 'The request took too long to complete. This may indicate a slow connection or backend issue.';
-    }
-    
-    if (errorType === 'auth') {
-      return 'There was an authentication problem. Try signing out and signing in again.';
-    }
-    
-    if (errorType === 'network') {
-      return 'Unable to reach the backend. Check your internet connection.';
-    }
-    
-    if (errorType === 'unexpected') {
-      return 'An unexpected error occurred. Please try again or contact support if the issue persists.';
-    }
-    
-    return null;
-  };
-
-  const stageLabel = getStageLabel(stage);
-  const diagnosticHint = getDiagnosticHint();
-
-  // Sanitize technical detail (remove any potential sensitive info)
-  const sanitizedTechnicalDetail = technicalDetail
-    ? technicalDetail.replace(/[a-zA-Z0-9]{20,}/g, '[REDACTED]') // Remove long tokens/keys
+  // Generate diagnostic hint based on error type
+  const diagnosticHint = errorType
+    ? {
+        timeout: 'The request took too long to complete. This usually indicates a slow network connection or server overload.',
+        network: 'Unable to reach the server. Check your internet connection and firewall settings.',
+        auth: 'Your authentication session may have expired or become invalid. Signing out and back in should resolve this.',
+        unexpected: 'An unexpected error occurred. This may be temporary - try again in a moment.',
+      }[errorType]
     : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <Card className="max-w-md w-full border-destructive">
-        <CardHeader className="text-center space-y-4 pb-6">
-          <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
-            <AlertCircle className="h-10 w-10 text-destructive" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Unable to Start</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-center text-muted-foreground">
-            {message}
-          </p>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <img
+            src="/assets/generated/wholesale-lens-mark.dim_512x512.png"
+            alt="Wholesale Lens"
+            className="h-16 w-16"
+            width={64}
+            height={64}
+          />
+        </div>
 
-          {stageLabel && (
-            <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">
-                Failed at: <span className="text-foreground">{stageLabel}</span>
-              </p>
-              {diagnosticHint && (
+        {/* Error Card */}
+        <div className="rounded-lg border border-destructive/20 bg-card p-6 shadow-lg">
+          <div className="flex items-start gap-4">
+            <div className="rounded-full bg-destructive/10 p-3">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <h2 className="text-lg font-semibold text-foreground">Startup Error</h2>
+              <p className="text-sm text-muted-foreground">{message}</p>
+              {stage && (
                 <p className="text-xs text-muted-foreground">
-                  {diagnosticHint}
+                  Failed at: <span className="font-mono">{stage}</span>
                 </p>
               )}
             </div>
-          )}
+          </div>
 
-          {sanitizedTechnicalDetail && (
-            <div className="border border-border rounded-lg overflow-hidden">
+          {/* Technical Details Accordion */}
+          {(technicalDetail || diagnosticHint) && (
+            <div className="mt-4">
+              <Separator className="mb-3" />
               <button
-                onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
-                className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors text-sm font-medium"
+                onClick={() => setShowTechnical(!showTechnical)}
+                className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
               >
                 <span>Technical Details</span>
-                {showTechnicalDetails ? (
+                {showTechnical ? (
                   <ChevronUp className="h-4 w-4" />
                 ) : (
                   <ChevronDown className="h-4 w-4" />
                 )}
               </button>
-              {showTechnicalDetails && (
-                <div className="p-3 bg-muted/10">
-                  <p className="text-xs font-mono text-muted-foreground break-words">
-                    {sanitizedTechnicalDetail}
-                  </p>
+              {showTechnical && (
+                <div className="mt-3 space-y-3 rounded-md bg-muted/50 p-3 text-xs">
+                  {diagnosticHint && (
+                    <div>
+                      <p className="font-semibold text-foreground mb-1">
+                        Classification: <span className="font-mono text-primary">{errorType}</span>
+                      </p>
+                      <p className="text-muted-foreground">{diagnosticHint}</p>
+                    </div>
+                  )}
+                  {technicalDetail && (
+                    <div>
+                      <p className="font-semibold text-foreground mb-1">Error Message:</p>
+                      <p className="font-mono text-muted-foreground break-words">{sanitizedDetail}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          <div className="space-y-3">
-            <Button onClick={onRetry} className="w-full" size="lg">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Retry
-            </Button>
-            
-            {isAuthError && (
-              <Button 
-                onClick={onSignOut} 
-                variant="secondary" 
-                className="w-full"
-                size="lg"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
+          {/* Actions */}
+          <div className="mt-6 flex flex-col gap-2">
+            {isAuthError && onSignOut ? (
+              <>
+                <Button onClick={onSignOut} variant="default" className="w-full">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Sign out and sign back in to refresh your session
+                </p>
+              </>
+            ) : (
+              <Button onClick={onRetry} variant="default" className="w-full">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
               </Button>
             )}
-            
-            <Button 
-              onClick={handleContactSupport} 
-              variant="outline" 
-              className="w-full"
-            >
-              Contact Support
-            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Help Text */}
+        <p className="text-center text-xs text-muted-foreground">
+          If the issue persists, please contact support or try again later.
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGetDeals, useGetCallerUserProfile } from '../hooks/useQueries';
 import { DealStage, MembershipTier } from '../backend';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OpaqueCard, CardContent, CardHeader, CardTitle } from '../components/OpaqueCard';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import DealCard from '../components/DealCard';
@@ -89,7 +89,7 @@ export default function DealsPipelinePage() {
         {stages.map((stage) => {
           const stageDeals = deals.filter((d) => d.stage === stage.id);
           return (
-            <Card key={stage.id}>
+            <OpaqueCard key={stage.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <div className={`h-3 w-3 rounded-full ${stage.color}`} />
@@ -112,7 +112,7 @@ export default function DealsPipelinePage() {
                   ))
                 )}
               </CardContent>
-            </Card>
+            </OpaqueCard>
           );
         })}
       </div>

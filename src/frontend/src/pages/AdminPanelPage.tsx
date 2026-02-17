@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useIsCallerAdmin, useUpdateMembershipPricing, useGetMembershipCatalog, useUpdateMembershipTier, useIsStripeConfigured, useSetStripeConfiguration } from '../hooks/useQueries';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OpaqueCard, CardContent, CardHeader, CardTitle } from '../components/OpaqueCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -194,7 +194,7 @@ export default function AdminPanelPage() {
         </TabsList>
 
         <TabsContent value="pricing" className="space-y-6">
-          <Card>
+          <OpaqueCard>
             <CardHeader>
               <CardTitle>Membership Pricing</CardTitle>
             </CardHeader>
@@ -206,7 +206,7 @@ export default function AdminPanelPage() {
               ) : (
                 <>
                   {/* Basic Tier */}
-                  <div className="space-y-4 p-4 border rounded-lg">
+                  <div className="space-y-4 p-4 border rounded-lg opaque-panel">
                     <h3 className="font-semibold text-lg">Basic Tier</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -250,7 +250,7 @@ export default function AdminPanelPage() {
                   </div>
 
                   {/* Pro Tier */}
-                  <div className="space-y-4 p-4 border rounded-lg">
+                  <div className="space-y-4 p-4 border rounded-lg opaque-panel">
                     <h3 className="font-semibold text-lg">Pro Tier</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -294,7 +294,7 @@ export default function AdminPanelPage() {
                   </div>
 
                   {/* Enterprise Tier */}
-                  <div className="space-y-4 p-4 border rounded-lg">
+                  <div className="space-y-4 p-4 border rounded-lg opaque-panel">
                     <h3 className="font-semibold text-lg">Enterprise Tier</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -354,11 +354,11 @@ export default function AdminPanelPage() {
                 </>
               )}
             </CardContent>
-          </Card>
+          </OpaqueCard>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">
-          <Card>
+          <OpaqueCard>
             <CardHeader>
               <CardTitle>Grant Membership Tier</CardTitle>
             </CardHeader>
@@ -403,11 +403,11 @@ export default function AdminPanelPage() {
                 )}
               </Button>
             </CardContent>
-          </Card>
+          </OpaqueCard>
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6">
-          <Card>
+          <OpaqueCard>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Stripe Configuration</span>
@@ -449,12 +449,12 @@ export default function AdminPanelPage() {
                   onChange={(e) => setStripeCountries(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Comma-separated list of 2-letter country codes (e.g., US, CA, GB)
+                  Comma-separated country codes (e.g., US,CA,GB)
                 </p>
               </div>
               <Button
                 onClick={handleConfigureStripe}
-                disabled={setStripeConfig.isPending}
+                disabled={setStripeConfig.isPending || !stripeSecretKey}
                 className="w-full"
               >
                 {setStripeConfig.isPending ? (
@@ -467,7 +467,7 @@ export default function AdminPanelPage() {
                 )}
               </Button>
             </CardContent>
-          </Card>
+          </OpaqueCard>
         </TabsContent>
       </Tabs>
     </div>

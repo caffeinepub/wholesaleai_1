@@ -1,48 +1,39 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T23:04:36.946Z",
-  "summary": "Frontend changes add improved startup orchestration, auth error classification utilities, and richer StartupErrorScreen diagnostics. The diff also includes broad UI/branding/styling updates across multiple pages/components and introduces a backend migration wrapper, but the provided backend diff excerpt does not show any concrete changes to the getCallerUserProfile path required by the BuildRequest.",
+  "generatedAt": "2026-02-17T17:12:14.203Z",
+  "summary": "Frontend changes add startup-safe profile querying with error classification and enhanced StartupErrorScreen diagnostics, but the diff evidence is insufficient to confirm the required backend \"startup-safe\" API exists/was hardened. The diff also includes many unrelated UI/feature changes beyond the login/profile startup fix scope.",
   "missing_requirements": [
     {
-      "id": "REQ-3",
-      "requirement": "Harden the backend user-profile retrieval path used by the frontend (getCallerUserProfile) so it does not intermittently trap/throw for valid authenticated callers; when a profile does not exist yet, it should return an empty/none result.",
-      "reason": "The backend diff excerpt shows new types and actor structure plus migration wiring, but does not include any visible implementation or change to getCallerUserProfile behavior (or its return type/Option handling) to ensure it never traps and returns a none/empty result when no profile exists.",
+      "id": "REQ-4",
+      "requirement": "Harden the backend profile APIs used at startup so they do not trap for normal first-time-user scenarios and provide a reliable way to distinguish \"no profile yet\" from true authorization failures.",
+      "reason": "Frontend now calls a new/required backend method `checkCallerUserProfileResult()` to avoid traps and distinguish Anonymous/FirstTime/Saved, but the provided backend/main.mo diff is truncated and does not show any implementation of this method or other explicit non-trapping startup-safe profile API changes.",
       "evidence": [
-        "backend/main.mo (truncated; no getCallerUserProfile changes shown)"
+        "frontend/src/hooks/useQueries.ts (calls actor.checkCallerUserProfileResult())",
+        "backend/main.mo (truncated; no evidence of checkCallerUserProfileResult implementation in shown portion)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Introduced backend stable-state migration scaffolding (backend/migration.mo) and wired actor to run migrations.",
-      "reason": "BuildRequest explicitly says to only add backend/migration.mo if a stable-state schema change is unavoidable; the diff adds migration even though the shown content is a no-op and the diff summary provides no evidence that a stable schema layout change was required for the login/profile-loading fix.",
+      "description": "Broad UI/UX restyling and new/expanded product pages/features (dashboard charts, deal analyzer, pipeline, buyers list, contracts, analytics, membership pricing UI changes, opaque card utilities, branded AppShell navigation styling).",
+      "reason": "BuildRequest explicitly scopes changes to fixing login/profile startup flow and diagnostics, with non-goals forbidding unrelated new product features. The diff summary indicates substantial unrelated page and styling work.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (\"import Migration \\\"migration\\\"\" and \"(with migration = Migration.run) actor\")"
+        "frontend-file-summaries.txt (mentions changes to DashboardPage, DealAnalyzerPage, DealsPipelinePage, BuyersListPage, ContractsPage, AnalyticsPage, MembershipPage, AppShell, index.css utility classes)"
       ]
     },
     {
-      "description": "Large UI/branding/styling changes unrelated to login/profile loading (sign-in screen redesign, sidebar/navigation styling tokens, multiple page feature descriptions).",
-      "reason": "Non-goal: \"Adding new product features unrelated to login/profile loading.\" The diff summary indicates broad visual/UX changes across many screens/pages beyond the startup/profile loading flow.",
+      "description": "URL parameter/sessionStorage management utilities expanded/added.",
+      "reason": "Not requested by any requirement; unrelated to login/profile startup error classification and recovery (based on BuildRequest).",
       "evidence": [
-        "frontend-file-summaries.txt (entries for frontend/src/index.css, frontend/src/components/SignInScreen.tsx, frontend/src/components/AppShell.tsx, multiple pages like DashboardPage, DealAnalyzerPage, DealsPipelinePage, BuyersListPage, ContractsPage, AnalyticsPage, MembershipPage)"
-      ]
-    },
-    {
-      "description": "Added/modified URL/session parameter persistence utilities beyond the stated requirements.",
-      "reason": "The BuildRequest requirements focus on fixing profile loading, auth error classification, backend profile retrieval hardening, and lightweight diagnostics; the diff summary shows extensive additions in urlParams utilities (sessionStorage persistence and parameter management) that are not requested by any REQ.",
-      "evidence": [
-        "frontend/src/utils/urlParams.ts (truncated; includes sessionStorage parameter persistence helpers)"
+        "frontend/src/utils/urlParams.ts"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
     "frontend/src/components/StartupErrorScreen.tsx",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/lib/authErrors.ts",

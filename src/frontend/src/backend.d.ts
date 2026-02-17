@@ -197,6 +197,18 @@ export interface backendInterface {
     analyzeDeal(address: string): Promise<DealAnalysis>;
     assignBuyerToDeal(dealId: bigint, buyerId: bigint): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    checkCallerUserProfileResult(): Promise<{
+        __kind__: "Saved";
+        Saved: {
+            profile: UserProfile;
+        };
+    } | {
+        __kind__: "Anonymous";
+        Anonymous: null;
+    } | {
+        __kind__: "FirstTime";
+        FirstTime: null;
+    }>;
     confirmMembershipPurchased(sessionId: string): Promise<void>;
     createBuyer(name: string, phone: string, email: string, preferredAreas: Array<string>, budgetMin: bigint, budgetMax: bigint, propertyTypePreference: string, notes: string): Promise<bigint>;
     createCheckoutSession(items: Array<ShoppingItem>, successUrl: string, cancelUrl: string): Promise<string>;

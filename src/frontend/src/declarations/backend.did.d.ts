@@ -186,6 +186,12 @@ export interface _SERVICE {
   'analyzeDeal' : ActorMethod<[string], DealAnalysis>,
   'assignBuyerToDeal' : ActorMethod<[bigint, bigint], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'checkCallerUserProfileResult' : ActorMethod<
+    [],
+    { 'Saved' : { 'profile' : UserProfile } } |
+      { 'Anonymous' : null } |
+      { 'FirstTime' : null }
+  >,
   'confirmMembershipPurchased' : ActorMethod<[string], undefined>,
   'createBuyer' : ActorMethod<
     [string, string, string, Array<string>, bigint, bigint, string, string],

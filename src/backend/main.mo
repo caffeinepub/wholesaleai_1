@@ -17,10 +17,8 @@ import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 import Stripe "stripe/stripe";
 import OutCall "http-outcalls/outcall";
-import Migration "migration";
 
 // Data migration with new actor definition via with-clause
-(with migration = Migration.run)
 actor {
   include MixinStorage();
 
@@ -58,7 +56,7 @@ actor {
   };
 
   // Extended user profile to persist user status
-  public type CustomUserProfile = {
+  public type CustomProfile = {
     profile : UserProfile;
     isFirstTime : Bool;
   };
@@ -175,7 +173,7 @@ actor {
   var nextBuyerId : Nat = 1;
   var nextContractId : Nat = 1;
 
-  let userProfiles = Map.empty<Principal, CustomUserProfile>(); // NOW for persistent isFirstTime per user
+  let userProfiles = Map.empty<Principal, CustomProfile>();
   let deals = Map.empty<Nat, Deal>();
   let buyers = Map.empty<Nat, Buyer>();
   let contracts = Map.empty<Nat, ContractDocument>();
@@ -209,21 +207,19 @@ actor {
     not caller.isAnonymous();
   };
 
-  // Helper: Check membership tier
-  func checkMembershipTier(caller : Principal, requiredTier : MembershipTier) : Bool {
+  // Profile existence check that never traps - for startup flow
+  public query ({ caller }) func checkCallerUserProfileResult() : async {
+    #Anonymous;
+    #FirstTime;
+    #Saved : { profile : UserProfile };
+  } {
+    // Anonymous: Not authenticated at all
+    if (caller.isAnonymous()) { return #Anonymous };
+
+    // No existing profile
     switch (userProfiles.get(caller)) {
-      case (null) { false };
-      case (?customProfile) {
-        switch (requiredTier) {
-          case (#Basic) { true };
-          case (#Pro) {
-            customProfile.profile.membershipTier == #Pro or customProfile.profile.membershipTier == #Enterprise;
-          };
-          case (#Enterprise) {
-            customProfile.profile.membershipTier == #Enterprise;
-          };
-        };
-      };
+      case (null) { #FirstTime };
+      case (?profile) { #Saved({ profile = profile.profile }) };
     };
   };
 
@@ -254,25 +250,14 @@ actor {
     userBuyers;
   };
 
-  // User Profile Management
+  // User Profile Management - hardened for startup flow
+
+  // Returns null for anonymous or missing profile - never traps
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    // Returns empty/none result if not found, does not trap
     if (not isAuthenticated(caller)) {
       return null;
     };
     userProfiles.get(caller).map(func(custom) { custom.profile });
-  };
-
-  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    // Allow any authenticated user to view their own profile
-    // Admins can view any profile
-    if (not isAuthenticated(caller)) {
-      Runtime.trap("Unauthorized: Authentication required");
-    };
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own profile");
-    };
-    userProfiles.get(user).map(func(custom) { custom.profile });
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
@@ -281,22 +266,20 @@ actor {
       Runtime.trap("Unauthorized: Authentication required");
     };
 
-    // Check if this is a new user (no profile exists)
     let isNewUser = userProfiles.get(caller) == null;
-
-    let customProfile : CustomUserProfile = {
+    let customProfile : CustomProfile = {
       profile = profile;
       isFirstTime = false;
     };
     userProfiles.add(caller, customProfile);
 
-    // CRITICAL FIX: Assign user role to new users immediately after profile creation
+    // Assign user role to new users right after profile creation
     if (isNewUser) {
       AccessControl.assignRole(accessControlState, caller, caller, #user);
     };
   };
 
-  // Initialize default profile for first-time users
+  // Initialize profile for first-time users - never traps
   public shared ({ caller }) func initializeProfile() : async UserProfile {
     if (not isAuthenticated(caller)) {
       Runtime.trap("Unauthorized: Authentication required");
@@ -305,7 +288,7 @@ actor {
     switch (userProfiles.get(caller)) {
       case (?existingProfile) { existingProfile.profile };
       case (null) {
-        let defaultProfile : CustomUserProfile = {
+        let defaultProfile : CustomProfile = {
           profile = {
             name = "";
             phone = "";
@@ -316,7 +299,7 @@ actor {
         };
         userProfiles.add(caller, defaultProfile);
 
-        // CRITICAL FIX: Assign user role immediately after profile initialization
+        // Assign user role after profile initialization
         AccessControl.assignRole(accessControlState, caller, caller, #user);
 
         defaultProfile.profile;
@@ -324,32 +307,30 @@ actor {
     };
   };
 
-  // Persistent first-time check for new users
-  public shared ({ caller }) func isFirstTimeUser() : async Bool {
-    if (not isAuthenticated(caller)) {
-      Runtime.trap("Unauthorized: Authentication required");
-    };
-
-    let currentProfile = getCurrentUserProfile(caller);
-    if (currentProfile.isFirstTime) {
-      userProfiles.add(caller, { currentProfile with isFirstTime = false });
-      true;
-    } else {
-      false;
-    };
-  };
-
+  // Check if user has profile - never traps, returns false for anonymous
   public query ({ caller }) func hasUserProfile() : async Bool {
     if (not isAuthenticated(caller)) {
-      Runtime.trap("Unauthorized: Authentication required");
+      return false;
     };
     userProfiles.containsKey(caller);
   };
 
-  func getCurrentUserProfile(caller : Principal) : CustomUserProfile {
+  // Check and clear first-time flag - never traps, returns false for anonymous or missing profile
+  public shared ({ caller }) func isFirstTimeUser() : async Bool {
+    if (not isAuthenticated(caller)) {
+      return false;
+    };
+
     switch (userProfiles.get(caller)) {
-      case (null) { Runtime.trap("User not found") };
-      case (?profile) { profile };
+      case (null) { false };
+      case (?currentProfile) {
+        if (currentProfile.isFirstTime) {
+          userProfiles.add(caller, { currentProfile with isFirstTime = false });
+          true;
+        } else {
+          false;
+        };
+      };
     };
   };
 
@@ -379,6 +360,24 @@ actor {
     analysis;
   };
 
+  // Helper: Check membership tier
+  func checkMembershipTier(caller : Principal, requiredTier : MembershipTier) : Bool {
+    switch (userProfiles.get(caller)) {
+      case (null) { false };
+      case (?customProfile) {
+        switch (requiredTier) {
+          case (#Basic) { true };
+          case (#Pro) {
+            customProfile.profile.membershipTier == #Pro or customProfile.profile.membershipTier == #Enterprise;
+          };
+          case (#Enterprise) {
+            customProfile.profile.membershipTier == #Enterprise;
+          };
+        };
+      };
+    };
+  };
+
   // Deal Management
   public shared ({ caller }) func createDeal(
     sellerName : Text,
@@ -398,8 +397,8 @@ actor {
     // Check Basic tier limit (15 active deals)
     switch (userProfiles.get(caller)) {
       case (null) { Runtime.trap("User profile not found") };
-      case (?customProfile) {
-        if (customProfile.profile.membershipTier == #Basic) {
+      case (?profile) {
+        if (profile.profile.membershipTier == #Basic) {
           let activeCount = countActiveDeals(caller);
           if (activeCount >= 15) {
             Runtime.trap("Basic tier limited to 15 active deals. Upgrade to Pro or Enterprise.");
@@ -923,8 +922,8 @@ actor {
     // Check Basic tier limit (15 active deals)
     switch (userProfiles.get(caller)) {
       case (null) { Runtime.trap("User profile not found") };
-      case (?customProfile) {
-        if (customProfile.profile.membershipTier == #Basic) {
+      case (?profile) {
+        if (profile.profile.membershipTier == #Basic) {
           let activeCount = countActiveDeals(caller);
           if (activeCount >= 15) {
             Runtime.trap("Basic tier limited to 15 active deals. Upgrade to Pro or Enterprise.");
@@ -995,7 +994,7 @@ actor {
     switch (userProfiles.get(userId)) {
       case (null) { Runtime.trap("User not found") };
       case (?customProfile) {
-        let updatedProfile : CustomUserProfile = {
+        let updatedProfile : CustomProfile = {
           profile = {
             customProfile.profile with
             membershipTier = tier;
@@ -1059,7 +1058,7 @@ actor {
             Runtime.trap("User profile not found. Please create a profile first.");
           };
           case (?existingProfile) {
-            let updatedProfile : CustomUserProfile = {
+            let updatedProfile : CustomProfile = {
               existingProfile with
               profile = {
                 existingProfile.profile with
@@ -1112,5 +1111,16 @@ actor {
         ?session;
       };
     };
+  };
+
+  // Access by other user id must be admin
+  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (not isAuthenticated(caller)) {
+      Runtime.trap("Unauthorized: Authentication required");
+    };
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile");
+    };
+    userProfiles.get(user).map(func(custom) { custom.profile });
   };
 };

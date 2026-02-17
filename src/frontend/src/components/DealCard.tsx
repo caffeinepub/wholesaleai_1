@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { OpaqueCard, CardContent } from './OpaqueCard';
 import { Button } from '@/components/ui/button';
 import { Edit } from 'lucide-react';
 import type { Deal } from '../backend';
@@ -10,7 +10,7 @@ interface DealCardProps {
 
 export default function DealCard({ deal, onEdit }: DealCardProps) {
   return (
-    <Card className="hover:border-primary/50 transition-colors">
+    <OpaqueCard className="hover:border-primary/50 transition-colors">
       <CardContent className="p-4 space-y-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -36,7 +36,6 @@ export default function DealCard({ deal, onEdit }: DealCardProps) {
           </span>
         </div>
       </CardContent>
-    </Card>
+    </OpaqueCard>
   );
 }
-

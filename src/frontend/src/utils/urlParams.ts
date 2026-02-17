@@ -34,26 +34,30 @@ export function getUrlParameter(paramName: string): string | null {
 
 /**
  * Gets the current route path from the URL
- * Supports both hash-based routing (#/path) and browser routing (/path)
+ * Supports hash-based routing (e.g., #/payment-success)
  *
- * @returns The current route path (e.g., '/payment-success', '/dashboard')
+ * @returns The current route path (e.g., '/payment-success' or '/')
  */
 export function getCurrentRoutePath(): string {
-    // Check for hash-based routing first
     const hash = window.location.hash;
-    if (hash && hash.length > 1) {
-        // Remove the leading #
-        const hashContent = hash.substring(1);
-        // Remove query string if present
-        const queryStartIndex = hashContent.indexOf('?');
-        if (queryStartIndex !== -1) {
-            return hashContent.substring(0, queryStartIndex);
-        }
-        return hashContent;
+    
+    if (!hash || hash.length <= 1) {
+        return '/';
     }
-
-    // Fall back to browser routing
-    return window.location.pathname;
+    
+    // Remove the leading #
+    const hashContent = hash.substring(1);
+    
+    // Split route path from query string
+    const queryStartIndex = hashContent.indexOf('?');
+    
+    if (queryStartIndex === -1) {
+        // No query string, return the whole hash as the path
+        return hashContent || '/';
+    }
+    
+    // Return just the path part before the query string
+    return hashContent.substring(0, queryStartIndex) || '/';
 }
 
 /**

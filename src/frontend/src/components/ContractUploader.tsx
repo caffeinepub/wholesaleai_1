@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUploadContract } from '../hooks/useQueries';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OpaqueCard, CardContent, CardHeader, CardTitle } from './OpaqueCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -86,7 +86,7 @@ export default function ContractUploader({ dealId }: ContractUploaderProps) {
   };
 
   return (
-    <Card>
+    <OpaqueCard>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="h-5 w-5" />
@@ -172,6 +172,6 @@ export default function ContractUploader({ dealId }: ContractUploaderProps) {
           )}
         </Button>
       </CardContent>
-    </Card>
+    </OpaqueCard>
   );
 }
